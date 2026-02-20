@@ -149,6 +149,38 @@ describe('App', () => {
     expect(screen.getByText('System prompt')).toBeInTheDocument()
   })
 
+  it('applies semantic badge classes for record metadata', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(makeRecordPayload()) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByRole('heading', { level: 2, name: 'demo case' })
+
+    const difficultyBadge = screen
+      .getAllByText('medium')
+      .find((element) => element.classList.contains('badge--difficulty-medium'))
+    expect(difficultyBadge).toBeTruthy()
+
+    const noCommercialBadge = screen.getByText('no-commercial')
+    expect(noCommercialBadge).toHaveClass('badge', 'badge--no-commercial')
+
+    const categoryBadge = screen
+      .getAllByText('cid001')
+      .find((element) => element.classList.contains('badge--category'))
+    expect(categoryBadge).toBeTruthy()
+  })
+
   it('renders index error state and supports retry', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
 

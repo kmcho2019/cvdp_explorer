@@ -126,9 +126,8 @@ body {
 }
 
 .record-meta {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.75rem;
-  color: #64748b;
+  margin-top: 0.1rem;
+  max-width: 100%;
 }
 
 .record-badges {
@@ -139,13 +138,104 @@ body {
   overflow: hidden;
 }
 
-.record-badges span,
-.badge-row span {
-  background: #e2e8f0;
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #cbd5e1;
   border-radius: 999px;
+  background: #e2e8f0;
+  color: #334155;
   font-size: 0.72rem;
   padding: 0.15rem 0.45rem;
   white-space: nowrap;
+  line-height: 1.25;
+}
+
+.badge--mode-agentic {
+  border-color: #67e8f9;
+  background: #ecfeff;
+  color: #155e75;
+}
+
+.badge--mode-nonagentic {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+.badge--difficulty-easy {
+  border-color: #86efac;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge--difficulty-medium {
+  border-color: #fcd34d;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge--difficulty-hard {
+  border-color: #fca5a5;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge--commercial {
+  border-color: #a5f3fc;
+  background: #ecfeff;
+  color: #0f766e;
+}
+
+.badge--no-commercial {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.badge--category {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.badge--task-generation {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+  color: #115e59;
+}
+
+.badge--task-comprehension {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.badge--dataset {
+  border-color: #fdba74;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.badge--record-id,
+.badge--source-file {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.69rem;
+}
+
+.badge--record-id {
+  border-color: #93c5fd;
+  background: #dbeafe;
+  color: #1e3a8a;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge--source-file {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
 }
 
 .main-panel {

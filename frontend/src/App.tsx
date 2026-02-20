@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm'
 import Prism from 'prismjs'
 import { filterIndexRecords, mapPrismLanguage, type IndexItem } from './lib/explorer'
 import { useDebouncedValue } from './lib/useDebouncedValue'
+import { getBadgeClassName, type BadgeKind } from './lib/badges'
 
 type FileEntry = {
   path: string
@@ -154,6 +155,10 @@ function CodeBlock({ file }: { file: FileEntry }): JSX.Element {
       </pre>
     </>
   )
+}
+
+function MetadataBadge({ kind, value }: { kind: BadgeKind; value: string }): JSX.Element {
+  return <span className={getBadgeClassName(kind, value)}>{value}</span>
 }
 
 function App(): JSX.Element {
@@ -546,11 +551,13 @@ function App(): JSX.Element {
                     aria-label={`Open ${item.id}`}
                   >
                     <div className="record-title">{item.title}</div>
-                    <div className="record-meta">{item.id}</div>
+                    <div className="record-meta">
+                      <MetadataBadge kind="id" value={item.id} />
+                    </div>
                     <div className="record-badges">
-                      <span>{item.mode}</span>
-                      <span>{item.difficulty}</span>
-                      <span>{item.category}</span>
+                      <MetadataBadge kind="mode" value={item.mode} />
+                      <MetadataBadge kind="difficulty" value={item.difficulty} />
+                      <MetadataBadge kind="category" value={item.category} />
                     </div>
                   </button>
                 </li>
@@ -599,14 +606,17 @@ function App(): JSX.Element {
           <>
             <section className="record-header card">
               <h2>{selectedRecord.meta.title}</h2>
-              <p>{selectedRecord.meta.id}</p>
+              <p>
+                <MetadataBadge kind="id" value={selectedRecord.meta.id} />
+              </p>
               <div className="badge-row">
-                <span>{selectedRecord.meta.mode}</span>
-                <span>{selectedRecord.meta.task_type}</span>
-                <span>{selectedRecord.meta.difficulty}</span>
-                <span>{selectedRecord.meta.category}</span>
-                <span>{selectedRecord.meta.commercial ? 'commercial' : 'no-commercial'}</span>
-                <span>{selectedRecord.raw.source_file}</span>
+                <MetadataBadge kind="mode" value={selectedRecord.meta.mode} />
+                <MetadataBadge kind="taskType" value={selectedRecord.meta.task_type} />
+                <MetadataBadge kind="difficulty" value={selectedRecord.meta.difficulty} />
+                <MetadataBadge kind="category" value={selectedRecord.meta.category} />
+                <MetadataBadge kind="dataset" value={selectedRecord.meta.dataset} />
+                <MetadataBadge kind="commercial" value={selectedRecord.meta.commercial ? 'commercial' : 'no-commercial'} />
+                <MetadataBadge kind="source" value={selectedRecord.raw.source_file} />
               </div>
             </section>
 

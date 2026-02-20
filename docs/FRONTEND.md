@@ -24,12 +24,16 @@ The frontend is a static React application for browsing normalized CVDP records 
   - primary explorer UI, loading flow, URL sync, and render logic
 - `frontend/src/lib/explorer.ts`
   - filter and Prism-language helper utilities
+- `frontend/src/lib/badges.ts`
+  - semantic badge tone and class mapping for metadata tags
 - `frontend/src/styles.css`
   - layout, visual design, and state styling
 - `frontend/src/App.test.tsx`
   - App-level UI behavior tests
 - `frontend/src/lib/explorer.test.ts`
   - utility-level tests
+- `frontend/src/lib/badges.test.ts`
+  - badge semantics regression coverage
 
 ## 4. Data Loading and State Model
 
@@ -74,6 +78,12 @@ File rendering:
 - selected file shown in code viewer with Prism highlighting
 - expected output redaction clearly labeled
 
+Metadata badge rendering:
+
+- badges use semantic color families instead of one neutral style
+- difficulty follows traffic-light coloring (`easy` green, `medium` amber, `hard` red)
+- mode, category, dataset, commercial-status, record IDs, and source-file labels each have distinct badge tones for faster visual scanning
+
 ## 6. Syntax Highlighting and Performance Guardrail
 
 Prism language mapping is handled by `mapPrismLanguage`:
@@ -105,6 +115,12 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - Prism language alias mapping
 - filter behavior by mode, difficulty, dataset, category, and combined criteria
 
+`frontend/src/lib/badges.test.ts` covers:
+
+- semantic badge-tone mapping by metadata type
+- difficulty traffic-light mapping guarantees
+- fallback behavior for unexpected values
+
 `frontend/src/lib/useDebouncedValue.test.ts` covers:
 
 - debounce timing behavior
@@ -121,6 +137,7 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - virtualization behavior for long record lists
 - URL-query hydration for selected ID + filters
 - URL-query updates for debounced search and filters
+- semantic badge classes for key metadata tags
 
 Run:
 
