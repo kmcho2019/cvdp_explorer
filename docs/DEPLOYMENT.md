@@ -38,8 +38,12 @@ flowchart LR
 3. Syncs Python tooling via `uv sync`.
 4. Runs preprocessing (`uv run python data/scripts/process_cvdp.py`).
 5. Builds frontend bundle (`npm run build` in `frontend/`).
-6. Uploads `frontend/dist` as Pages artifact.
-7. Deploys artifact to GitHub Pages.
+6. Verifies Pages artifact layout:
+   - `frontend/dist/index.html` exists
+   - `frontend/dist/data/index.json` exists
+   - asset prefix matches expected Pages base path
+7. Uploads `frontend/dist` as Pages artifact.
+8. Deploys artifact to GitHub Pages.
 
 ### 2.4 Verify deployment
 
@@ -90,11 +94,16 @@ URL: `http://localhost:4173/`
 
 ### 3.4 Local option D: GitHub Pages base-path simulation
 
-The Vite config sets `base` from `GITHUB_REPOSITORY` for production builds. To simulate Pages path routing locally:
+The Vite config sets `base` from `GITHUB_REPOSITORY` for build output:
+
+- project Pages repo (`owner/repo`) -> `/<repo>/`
+- user/org Pages repo (`owner/owner.github.io`) -> `/`
+
+To simulate project Pages path routing locally:
 
 ```bash
 cd frontend
-GITHUB_REPOSITORY=owner/repo NODE_ENV=production npm run build
+GITHUB_REPOSITORY=owner/repo npm run build
 npm run preview -- --host --port 4173
 ```
 
@@ -103,6 +112,14 @@ Then open:
 - `http://localhost:4173/<repo>/`
 
 This helps catch path issues before pushing to `main`.
+
+To simulate user/org Pages root routing:
+
+```bash
+cd frontend
+GITHUB_REPOSITORY=owner/owner.github.io npm run build
+npm run preview -- --host --port 4173
+```
 
 ## 4. Recommended Pre-Deploy Checklist
 

@@ -50,6 +50,25 @@ jobs:
         run: npm run build
         working-directory: frontend
 
+      - name: Verify Pages artifact layout
+        run: |
+          test -f frontend/dist/index.html
+          test -f frontend/dist/data/index.json
+
+          OWNER="${GITHUB_REPOSITORY%%/*}"
+          REPO="${GITHUB_REPOSITORY#*/}"
+          if [ "${REPO}" = "${OWNER}.github.io" ]; then
+            EXPECTED_ASSET_PREFIX="/assets/"
+          else
+            EXPECTED_ASSET_PREFIX="/${REPO}/assets/"
+          fi
+
+          if ! grep -q "${EXPECTED_ASSET_PREFIX}" frontend/dist/index.html; then
+            echo "Expected asset prefix '${EXPECTED_ASSET_PREFIX}' not found in dist/index.html"
+            sed -n '1,40p' frontend/dist/index.html
+            exit 1
+          fi
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 

@@ -128,7 +128,7 @@ Pages base-path simulation:
 
 ```bash
 cd frontend
-GITHUB_REPOSITORY=owner/repo NODE_ENV=production npm run build
+GITHUB_REPOSITORY=owner/repo npm run build
 npm run preview -- --host --port 4173
 ```
 
