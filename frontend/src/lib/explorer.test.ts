@@ -77,4 +77,26 @@ describe('filterIndexRecords', () => {
     expect(result).toHaveLength(1)
     expect(result[0].title).toContain('golden model')
   })
+
+  it('filters by dataset', () => {
+    const result = filterIndexRecords(sample, {
+      search: '',
+      modeFilter: 'all',
+      difficultyFilter: 'all',
+      datasetFilter: 'agentic_code_generation_no_commercial',
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0].mode).toBe('agentic')
+  })
+
+  it('applies all filters together', () => {
+    const result = filterIndexRecords(sample, {
+      search: 'demo',
+      modeFilter: 'agentic',
+      difficultyFilter: 'medium',
+      datasetFilter: 'agentic_code_generation_no_commercial',
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('cvdp_agentic_demo_0001')
+  })
 })
