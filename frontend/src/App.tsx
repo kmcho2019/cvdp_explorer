@@ -3,7 +3,7 @@ import Markdown from 'react-markdown'
 import type { Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import Prism from 'prismjs'
-import { filterIndexRecords, mapPrismLanguage, type IndexItem } from './lib/explorer'
+import { filterIndexRecords, isMarkdownLikeFile, mapPrismLanguage, type IndexItem } from './lib/explorer'
 import { useDebouncedValue } from './lib/useDebouncedValue'
 import { getBadgeClassName, type BadgeKind } from './lib/badges'
 import { highlightPromptCode, isInlineCodeNode } from './lib/promptMarkdown'
@@ -246,6 +246,17 @@ function PromptMarkdown({ content }: { content: string }): JSX.Element {
       {content}
     </Markdown>
   )
+}
+
+function FileViewerContent({ file }: { file: FileEntry }): JSX.Element {
+  if (isMarkdownLikeFile(file.path, file.language)) {
+    return (
+      <div className="markdown-file-view">
+        <PromptMarkdown content={file.content} />
+      </div>
+    )
+  }
+  return <CodeBlock file={file} />
 }
 
 function BenchmarkGuidePanel(): JSX.Element {
@@ -1057,7 +1068,7 @@ function App(): JSX.Element {
                       <>
                         <div className="file-title">{selectedFile.path}</div>
                         {selectedFile.redacted ? <div className="redaction">Expected output is redacted in this dataset release.</div> : null}
-                        <CodeBlock file={selectedFile} />
+                        <FileViewerContent file={selectedFile} />
                       </>
                     ) : (
                       <p>Select a file to view content.</p>

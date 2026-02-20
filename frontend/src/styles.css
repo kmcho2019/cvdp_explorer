@@ -594,6 +594,48 @@ body {
   color: #334155;
 }
 
+.markdown-file-view {
+  border: 1px solid #dbe5f0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.85rem;
+  max-height: 560px;
+  overflow: auto;
+}
+
+.markdown-file-view > :first-child {
+  margin-top: 0;
+}
+
+.markdown-file-view > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-file-view p,
+.markdown-file-view li {
+  line-height: 1.45;
+}
+
+.markdown-file-view table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 560px;
+}
+
+.markdown-file-view th,
+.markdown-file-view td {
+  border: 1px solid #dbe5f0;
+  padding: 0.42rem;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.82rem;
+}
+
+.markdown-file-view th {
+  background: #f8fafc;
+  color: #334155;
+}
+
 .code-panel {
   margin: 0;
   border-radius: 10px;

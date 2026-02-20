@@ -92,7 +92,8 @@ Prompt rendering:
 File rendering:
 
 - context, harness, and expected-output files shown in grouped navigation
-- selected file shown in code viewer with Prism highlighting
+- selected file shown in code viewer with Prism highlighting when file content is source code/text
+- markdown files (for example `docs/specification.md`) are rendered as formatted markdown in the file viewer, including GFM tables and highlighted fenced code blocks
 - expected output redaction clearly labeled
 
 Metadata badge rendering:
@@ -194,6 +195,7 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - URL-query updates for debounced search and filters (including task type)
 - semantic badge classes for key metadata tags
 - prompt markdown code-fence rendering with inferred syntax-language classes
+- markdown context-file rendering in file viewer (heading/list/code-fence behavior)
 - category label rendering with short descriptions in filter/metadata views
 
 Run:

@@ -263,6 +263,48 @@ describe('App', () => {
     expect(inferredVerilogBlock).toHaveTextContent('module partial_demo;')
   })
 
+  it('renders markdown context files as formatted markdown in the file viewer', async () => {
+    const markdownContext = [
+      '# Context Spec',
+      '',
+      '- first constraint',
+      '- second constraint',
+      '',
+      '```systemverilog',
+      'module context_demo;',
+      'endmodule',
+      '```',
+    ].join('\n')
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(
+          makeRecordPayload({
+            context_files: [{ path: 'docs/specification.md', language: 'markdown', content: markdownContext }],
+          }),
+        ) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByRole('heading', { level: 2, name: 'demo case' })
+    expect(screen.getAllByText('docs/specification.md')).toHaveLength(2)
+    expect(screen.getByRole('heading', { name: 'Context Spec' })).toBeInTheDocument()
+    expect(screen.queryByText('# Context Spec')).not.toBeInTheDocument()
+
+    const renderedMarkdownBlock = document.querySelector('.markdown-file-view .markdown-code.language-verilog')
+    expect(renderedMarkdownBlock).toBeTruthy()
+    expect(renderedMarkdownBlock).toHaveTextContent('module context_demo;')
+  })
+
   it('shows category labels with short descriptions in filter options and metadata', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)

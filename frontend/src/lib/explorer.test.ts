@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { filterIndexRecords, mapPrismLanguage, type IndexItem } from './explorer'
+import { filterIndexRecords, isMarkdownLikeFile, mapPrismLanguage, type IndexItem } from './explorer'
 
 const sample: IndexItem[] = [
   {
@@ -42,6 +42,22 @@ describe('mapPrismLanguage', () => {
     expect(mapPrismLanguage('batch')).toBe('bash')
     expect(mapPrismLanguage('text')).toBe('none')
     expect(mapPrismLanguage('python')).toBe('python')
+  })
+})
+
+describe('isMarkdownLikeFile', () => {
+  it('returns true for markdown language values', () => {
+    expect(isMarkdownLikeFile('docs/specification.txt', 'markdown')).toBe(true)
+    expect(isMarkdownLikeFile('docs/specification.txt', 'md')).toBe(true)
+  })
+
+  it('returns true for markdown path suffixes regardless of case', () => {
+    expect(isMarkdownLikeFile('docs/specification.md', 'text')).toBe(true)
+    expect(isMarkdownLikeFile('docs/README.MARKDOWN', 'text')).toBe(true)
+  })
+
+  it('returns false for non-markdown files', () => {
+    expect(isMarkdownLikeFile('rtl/design.sv', 'systemverilog')).toBe(false)
   })
 })
 

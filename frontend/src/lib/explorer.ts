@@ -28,6 +28,14 @@ export function mapPrismLanguage(language: string): string {
   }
 }
 
+export function isMarkdownLikeFile(path: string, language: string): boolean {
+  const normalizedLanguage = language.trim().toLowerCase()
+  if (normalizedLanguage === 'markdown' || normalizedLanguage === 'md') return true
+
+  const normalizedPath = path.trim().toLowerCase()
+  return normalizedPath.endsWith('.md') || normalizedPath.endsWith('.markdown')
+}
+
 export type FilterOptions = {
   search: string
   taskTypeFilter: 'all' | 'code_generation' | 'code_comprehension'
