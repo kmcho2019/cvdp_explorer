@@ -116,6 +116,17 @@ Project docs are consolidated under `docs/`.
 
 Detailed steps and troubleshooting are in `docs/DEPLOYMENT.md`.
 
+### 1.1 Search indexing / Search Console
+
+- Google ownership verification file must live in `frontend/public/` so it is deployed with the site.
+- Current verification file:
+  - `frontend/public/googlea2df242e632476d2.html`
+- SEO baseline files:
+  - `frontend/public/robots.txt`
+  - `frontend/public/sitemap.xml`
+- Full verification + indexing checklist:
+  - `docs/DEPLOYMENT.md` (sections on Search Console and SEO baseline)
+
 ### 2. Local deployment options
 
 Development server:

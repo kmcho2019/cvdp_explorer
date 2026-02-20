@@ -56,6 +56,26 @@ Live site URL for this repository:
 
 - <https://kmcho2019.github.io/cvdp_explorer/>
 
+## 2.5 Google Search Console ownership verification (HTML file method)
+
+This repository uses the URL-prefix property:
+
+- `https://kmcho2019.github.io/cvdp_explorer/`
+
+Verification file handling:
+
+1. Download the verification file from Google Search Console (for this repo it is currently `googlea2df242e632476d2.html`).
+2. Place it under `frontend/public/` so Vite copies it to `frontend/dist/` during build.
+3. Commit and push the file.
+4. Wait for the Pages deployment workflow to finish.
+5. Confirm the file is reachable at:
+   - <https://kmcho2019.github.io/cvdp_explorer/googlea2df242e632476d2.html>
+6. Click `Verify` in Search Console.
+
+Important:
+
+- Keep the verification file in the repository after verification; removing it can invalidate ownership.
+
 ## 3. Local Deployment Options
 
 ### 3.1 Local option A: development server (fast iteration)
@@ -143,7 +163,29 @@ npm test
 npm run build
 ```
 
-## 5. Common Issues and Fixes
+Post-build SEO smoke checks:
+
+```bash
+test -f frontend/dist/robots.txt
+test -f frontend/dist/sitemap.xml
+test -f frontend/dist/googlea2df242e632476d2.html
+```
+
+## 5. Basic SEO baseline for GitHub Pages
+
+Current baseline in this repository:
+
+- `frontend/index.html` includes description, canonical URL, robots directive, Open Graph, Twitter, and WebSite JSON-LD metadata.
+- `frontend/public/robots.txt` allows crawling and points to sitemap.
+- `frontend/public/sitemap.xml` declares the public explorer URL.
+
+Recommended Search Console actions:
+
+1. Verify ownership (section 2.5).
+2. Submit `https://kmcho2019.github.io/cvdp_explorer/sitemap.xml` in Search Console Sitemaps.
+3. Use URL Inspection on `https://kmcho2019.github.io/cvdp_explorer/` and request indexing after major updates.
+
+## 6. Common Issues and Fixes
 
 ### 5.1 Blank page or missing assets on GitHub Pages
 
