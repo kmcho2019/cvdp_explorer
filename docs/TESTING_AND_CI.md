@@ -60,11 +60,14 @@ Frontend tests currently validate:
 
 - filtering utility behavior for multiple criteria
 - Prism language mapping utility behavior
+- debounce hook timing/cancellation behavior
 - App-level success path (index + record load)
 - index error + retry flow
 - record error + retry flow
 - empty filtered result state
 - large-file performance notice rendering
+- category filtering with selected-record synchronization
+- sidebar virtualization behavior for large record sets
 
 ## 4. CI Workflows
 

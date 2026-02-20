@@ -5,6 +5,7 @@
 The frontend is a static React application for browsing normalized CVDP records with:
 
 - searchable/filterable record navigation
+- category/dataset/mode/difficulty filtering
 - markdown prompt rendering
 - syntax-highlighted code/document viewing
 - explicit redaction and loading/error states
@@ -42,6 +43,7 @@ The frontend is a static React application for browsing normalized CVDP records 
 
 - selected ID is reflected in URL query params
 - browser back/forward is supported with `popstate` handling
+- if filters remove the currently selected ID, selection automatically moves to the first visible result
 
 ## 4.3 Async safety
 
@@ -91,13 +93,20 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - record count uses `aria-live` for state updates
 - error states are rendered as visible alert sections with retry controls
 - empty sections show clear, non-ambiguous messages
+- search input is debounced to reduce unnecessary list churn while typing
+- sidebar record list is virtualized for large datasets to maintain responsiveness
 
 ## 8. Testing Coverage
 
 `frontend/src/lib/explorer.test.ts` covers:
 
 - Prism language alias mapping
-- filter behavior by mode, difficulty, dataset, and combined criteria
+- filter behavior by mode, difficulty, dataset, category, and combined criteria
+
+`frontend/src/lib/useDebouncedValue.test.ts` covers:
+
+- debounce timing behavior
+- cancellation semantics for rapid sequential updates
 
 `frontend/src/App.test.tsx` covers:
 
@@ -106,6 +115,8 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - record error and retry behavior
 - filter empty-state rendering
 - large-file performance notice rendering
+- category filter + selected record synchronization behavior
+- virtualization behavior for long record lists
 
 Run:
 
