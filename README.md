@@ -66,11 +66,58 @@ Project docs are consolidated under `docs/`.
 - `docs/DATA_PIPELINE.md`: normalization and output contract.
 - `docs/FRONTEND.md`: UI behavior and rendering model.
 - `docs/TESTING_AND_CI.md`: testing commands and CI flow.
+- `docs/DEPLOYMENT.md`: GitHub Pages setup, deployment flow, and local deployment options.
 
 ## CI/CD
 
 - `/.github/workflows/ci.yml`: PR and main-branch validation (tests + build).
 - `/.github/workflows/deploy.yml`: GitHub Pages deployment.
+
+## Deployment Quick Guide
+
+### 1. GitHub Pages deployment
+
+1. Ensure `Settings -> Pages -> Source` is set to `GitHub Actions`.
+2. Push to `main` (or run deploy workflow manually).
+3. Watch `Deploy CVDP Explorer` in GitHub Actions.
+4. Open the published URL shown by the deploy job.
+
+Detailed steps and troubleshooting are in `docs/DEPLOYMENT.md`.
+
+### 2. Local deployment options
+
+Development server:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Production preview:
+
+```bash
+cd frontend
+npm run build
+npm run preview -- --host --port 4173
+```
+
+Static hosting simulation:
+
+```bash
+cd frontend
+npm run build
+cd dist
+python -m http.server 4173
+```
+
+Pages base-path simulation:
+
+```bash
+cd frontend
+GITHUB_REPOSITORY=owner/repo NODE_ENV=production npm run build
+npm run preview -- --host --port 4173
+```
 
 ## Notes on Redacted Outputs
 

@@ -85,6 +85,7 @@ Frontend tests currently validate:
 - builds normalized data
 - builds frontend static assets
 - deploys to GitHub Pages
+- deployment setup and troubleshooting details are documented in `docs/DEPLOYMENT.md`
 
 ## 5. Pre-Merge Checklist
 
