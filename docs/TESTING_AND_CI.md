@@ -34,6 +34,7 @@ npm run build
 - Frontend:
   - record filtering logic
   - Prism language mapping logic
+  - App-level loading and error-retry rendering paths (mocked fetch)
 
 ## GitHub Actions
 

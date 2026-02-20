@@ -18,7 +18,8 @@
 1. Fetch `./data/index.json` at startup.
 2. Filter and search records in memory.
 3. Fetch `./data/records/<id>.json` when a record is selected.
-4. Persist current record in URL query param (`?id=...`).
+4. Persist current record in URL query param (`?id=...`) and handle browser back/forward (`popstate`).
+5. Use cancellation (`AbortController`) for in-flight index/record requests to prevent stale UI races.
 
 ## UX Sections
 
@@ -26,7 +27,9 @@
 - Prompt section (system and user markdown).
 - File browser for context/harness/expected output files.
 - Code viewer with Prism highlighting.
+- Large-file fallback: very large files are initially rendered as plain text to avoid UI stalls, with an explicit “enable highlighting” action.
 - Explicit redaction notice for missing reference output.
+- Explicit loading, error, retry, and empty-state UI for index and record fetches.
 
 ## Run Locally
 
