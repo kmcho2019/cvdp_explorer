@@ -9,6 +9,14 @@ import { getBadgeClassName, type BadgeKind } from './lib/badges'
 import { highlightPromptCode, isInlineCodeNode } from './lib/promptMarkdown'
 import { formatCategoryLabel } from './lib/categories'
 import { buildFilterHierarchy } from './lib/hierarchy'
+import {
+  availabilityLabel,
+  BENCHMARK_OVERVIEW,
+  CATEGORY_GUIDE_ROWS,
+  EVALUATION_FLOW_STEPS,
+  scoringModeLabel,
+  type BenchmarkCategoryGuide,
+} from './lib/benchmarkGuide'
 
 type FileEntry = {
   path: string
@@ -54,6 +62,7 @@ type FileSelection = {
 type ModeFilter = 'all' | 'agentic' | 'nonagentic'
 type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard'
 type TaskTypeFilter = 'all' | 'code_generation' | 'code_comprehension'
+type MainPanelSection = 'records' | 'benchmark'
 
 type UrlState = {
   id: string
@@ -96,6 +105,18 @@ function taskTypeLabel(value: TaskTypeFilter): string {
   if (value === 'code_generation') return 'Code Generation'
   if (value === 'code_comprehension') return 'Code Comprehension'
   return 'All Task Types'
+}
+
+function scoringBadgeClassName(category: BenchmarkCategoryGuide): string {
+  if (category.scoringMode === 'bleu') return 'guide-chip guide-chip--scoring-bleu'
+  if (category.scoringMode === 'llm_subjective') return 'guide-chip guide-chip--scoring-llm'
+  return 'guide-chip guide-chip--scoring-threshold'
+}
+
+function availabilityBadgeClassName(category: BenchmarkCategoryGuide): string {
+  if (category.availability === 'both') return 'guide-chip guide-chip--availability-both'
+  if (category.availability === 'agentic_only') return 'guide-chip guide-chip--availability-agentic'
+  return 'guide-chip guide-chip--availability-nonagentic'
 }
 
 function readUrlState(): UrlState {
@@ -227,6 +248,86 @@ function PromptMarkdown({ content }: { content: string }): JSX.Element {
   )
 }
 
+function BenchmarkGuidePanel(): JSX.Element {
+  return (
+    <>
+      <section className="card guide-card">
+        <h2>{BENCHMARK_OVERVIEW.title}</h2>
+        <p>{BENCHMARK_OVERVIEW.summary}</p>
+        <p>{BENCHMARK_OVERVIEW.datasetNote}</p>
+        <h3>Primary Sources</h3>
+        <ul className="guide-source-list">
+          {BENCHMARK_OVERVIEW.sourcePaths.map((path) => (
+            <li key={path}>
+              <code>{path}</code>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="card guide-card">
+        <h3>How Evaluation Works</h3>
+        <ol className="guide-flow-list">
+          {EVALUATION_FLOW_STEPS.map((step) => (
+            <li key={step.id} className="guide-flow-item">
+              <h4>{step.title}</h4>
+              <p>{step.description}</p>
+              <p className="guide-source">
+                Source: <code>{step.source}</code>
+              </p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="card guide-card">
+        <h3>Category Reference</h3>
+        <p>Each category below maps to a concrete evaluation pattern in the benchmark infrastructure.</p>
+        <div className="guide-table-wrap">
+          <table className="guide-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Task Type</th>
+                <th>Availability</th>
+                <th>Scoring</th>
+                <th>How It Works</th>
+              </tr>
+            </thead>
+            <tbody>
+              {CATEGORY_GUIDE_ROWS.map((category) => (
+                <tr key={category.id}>
+                  <td>
+                    <div className="guide-category-title">
+                      <strong>{category.id}</strong>
+                      <span>{category.title}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span className={category.taskType === 'code_generation' ? 'guide-chip guide-chip--task-gen' : 'guide-chip guide-chip--task-comp'}>
+                      {taskTypeLabel(category.taskType)}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={availabilityBadgeClassName(category)}>{availabilityLabel(category.availability)}</span>
+                  </td>
+                  <td>
+                    <span className={scoringBadgeClassName(category)}>{scoringModeLabel(category.scoringMode)}</span>
+                  </td>
+                  <td>
+                    <p className="guide-category-description">{category.description}</p>
+                    <p className="guide-category-evaluation">{category.evaluation}</p>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </>
+  )
+}
+
 function App(): JSX.Element {
   const initialUrlState = useMemo(() => readUrlState(), [])
 
@@ -235,6 +336,7 @@ function App(): JSX.Element {
   const [selectedRecord, setSelectedRecord] = useState<RecordDetail | null>(null)
   const [selection, setSelection] = useState<FileSelection | null>(null)
 
+  const [mainSection, setMainSection] = useState<MainPanelSection>('records')
   const [search, setSearch] = useState(initialUrlState.search)
   const [taskTypeFilter, setTaskTypeFilter] = useState<TaskTypeFilter>(initialUrlState.taskTypeFilter)
   const [modeFilter, setModeFilter] = useState<ModeFilter>(initialUrlState.modeFilter)
@@ -820,136 +922,159 @@ function App(): JSX.Element {
       </aside>
 
       <main className="main-panel">
-        {indexLoading ? (
-          <section className="card">
-            <h2>Loading dataset index...</h2>
-            <p className="loading-message">Preparing benchmark list.</p>
-          </section>
-        ) : indexError ? (
-          <section className="card" role="alert">
-            <h2>Unable to load explorer data</h2>
-            <p>{indexError}</p>
-            <button type="button" className="retry-button" onClick={retryIndex}>
-              Retry
-            </button>
-          </section>
-        ) : index.length === 0 ? (
-          <section className="card">
-            <h2>No records found</h2>
-            <p>Processed data index is empty.</p>
-          </section>
-        ) : recordError ? (
-          <section className="card" role="alert">
-            <h2>Unable to load selected record</h2>
-            <p>{recordError}</p>
-            <button type="button" className="retry-button" onClick={retryRecord}>
-              Retry record load
-            </button>
-          </section>
-        ) : recordLoading || selectedRecord === null ? (
-          <section className="card">
-            <h2>Loading record...</h2>
-            <p className="loading-message">Fetching benchmark details.</p>
-          </section>
+        <section className="panel-switch">
+          <button
+            type="button"
+            className={mainSection === 'records' ? 'panel-switch-button active' : 'panel-switch-button'}
+            onClick={() => setMainSection('records')}
+          >
+            Record Explorer
+          </button>
+          <button
+            type="button"
+            className={mainSection === 'benchmark' ? 'panel-switch-button active' : 'panel-switch-button'}
+            onClick={() => setMainSection('benchmark')}
+          >
+            Benchmark Guide
+          </button>
+        </section>
+
+        {mainSection === 'benchmark' ? (
+          <BenchmarkGuidePanel />
         ) : (
           <>
-            <section className="record-header card">
-              <h2>{selectedRecord.meta.title}</h2>
-              <p>
-                <MetadataBadge kind="id" value={selectedRecord.meta.id} />
-              </p>
-              <div className="badge-row">
-                <MetadataBadge kind="mode" value={selectedRecord.meta.mode} />
-                <MetadataBadge kind="taskType" value={selectedRecord.meta.task_type} />
-                <MetadataBadge kind="difficulty" value={selectedRecord.meta.difficulty} />
-                <MetadataBadge
-                  kind="category"
-                  value={selectedRecord.meta.category}
-                  displayValue={formatCategoryLabel(selectedRecord.meta.category)}
-                />
-                <MetadataBadge kind="dataset" value={selectedRecord.meta.dataset} />
-                <MetadataBadge kind="commercial" value={selectedRecord.meta.commercial ? 'commercial' : 'no-commercial'} />
-                <MetadataBadge kind="source" value={selectedRecord.raw.source_file} />
-              </div>
-            </section>
+            {indexLoading ? (
+              <section className="card">
+                <h2>Loading dataset index...</h2>
+                <p className="loading-message">Preparing benchmark list.</p>
+              </section>
+            ) : indexError ? (
+              <section className="card" role="alert">
+                <h2>Unable to load explorer data</h2>
+                <p>{indexError}</p>
+                <button type="button" className="retry-button" onClick={retryIndex}>
+                  Retry
+                </button>
+              </section>
+            ) : index.length === 0 ? (
+              <section className="card">
+                <h2>No records found</h2>
+                <p>Processed data index is empty.</p>
+              </section>
+            ) : recordError ? (
+              <section className="card" role="alert">
+                <h2>Unable to load selected record</h2>
+                <p>{recordError}</p>
+                <button type="button" className="retry-button" onClick={retryRecord}>
+                  Retry record load
+                </button>
+              </section>
+            ) : recordLoading || selectedRecord === null ? (
+              <section className="card">
+                <h2>Loading record...</h2>
+                <p className="loading-message">Fetching benchmark details.</p>
+              </section>
+            ) : (
+              <>
+                <section className="record-header card">
+                  <h2>{selectedRecord.meta.title}</h2>
+                  <p>
+                    <MetadataBadge kind="id" value={selectedRecord.meta.id} />
+                  </p>
+                  <div className="badge-row">
+                    <MetadataBadge kind="mode" value={selectedRecord.meta.mode} />
+                    <MetadataBadge kind="taskType" value={selectedRecord.meta.task_type} />
+                    <MetadataBadge kind="difficulty" value={selectedRecord.meta.difficulty} />
+                    <MetadataBadge
+                      kind="category"
+                      value={selectedRecord.meta.category}
+                      displayValue={formatCategoryLabel(selectedRecord.meta.category)}
+                    />
+                    <MetadataBadge kind="dataset" value={selectedRecord.meta.dataset} />
+                    <MetadataBadge kind="commercial" value={selectedRecord.meta.commercial ? 'commercial' : 'no-commercial'} />
+                    <MetadataBadge kind="source" value={selectedRecord.raw.source_file} />
+                  </div>
+                </section>
 
-            <section className="card">
-              <h3>Prompt</h3>
-              {selectedRecord.prompt.system.trim() !== '' ? (
-                <div className="prompt-block">
-                  <h4>System Message</h4>
-                  <PromptMarkdown content={selectedRecord.prompt.system} />
-                </div>
-              ) : null}
-              <div className="prompt-block">
-                <h4>User Prompt</h4>
-                <PromptMarkdown content={selectedRecord.prompt.user} />
-              </div>
-            </section>
+                <section className="card">
+                  <h3>Prompt</h3>
+                  {selectedRecord.prompt.system.trim() !== '' ? (
+                    <div className="prompt-block">
+                      <h4>System Message</h4>
+                      <PromptMarkdown content={selectedRecord.prompt.system} />
+                    </div>
+                  ) : null}
+                  <div className="prompt-block">
+                    <h4>User Prompt</h4>
+                    <PromptMarkdown content={selectedRecord.prompt.user} />
+                  </div>
+                </section>
 
-            <section className="card file-layout">
-              <div className="file-nav">
-                <h3>Files</h3>
+                <section className="card file-layout">
+                  <div className="file-nav">
+                    <h3>Files</h3>
 
-                <p>Context</p>
-                {selectedRecord.context_files.length === 0 ? <div className="empty-note">No context files.</div> : null}
-                {selectedRecord.context_files.map((file) => (
-                  <button
-                    key={`context-${file.path}`}
-                    className={selection?.group === 'context' && selection.path === file.path ? 'file-item active' : 'file-item'}
-                    onClick={() => setSelection({ group: 'context', path: file.path })}
-                  >
-                    {file.path}
-                  </button>
-                ))}
+                    <p>Context</p>
+                    {selectedRecord.context_files.length === 0 ? <div className="empty-note">No context files.</div> : null}
+                    {selectedRecord.context_files.map((file) => (
+                      <button
+                        key={`context-${file.path}`}
+                        className={selection?.group === 'context' && selection.path === file.path ? 'file-item active' : 'file-item'}
+                        onClick={() => setSelection({ group: 'context', path: file.path })}
+                      >
+                        {file.path}
+                      </button>
+                    ))}
 
-                <p>Harness</p>
-                {selectedRecord.harness_files.length === 0 ? <div className="empty-note">No harness files.</div> : null}
-                {selectedRecord.harness_files.map((file) => (
-                  <button
-                    key={`harness-${file.path}`}
-                    className={selection?.group === 'harness' && selection.path === file.path ? 'file-item active' : 'file-item'}
-                    onClick={() => setSelection({ group: 'harness', path: file.path })}
-                  >
-                    {file.path}
-                  </button>
-                ))}
+                    <p>Harness</p>
+                    {selectedRecord.harness_files.length === 0 ? <div className="empty-note">No harness files.</div> : null}
+                    {selectedRecord.harness_files.map((file) => (
+                      <button
+                        key={`harness-${file.path}`}
+                        className={selection?.group === 'harness' && selection.path === file.path ? 'file-item active' : 'file-item'}
+                        onClick={() => setSelection({ group: 'harness', path: file.path })}
+                      >
+                        {file.path}
+                      </button>
+                    ))}
 
-                <p>Expected Output</p>
-                {selectedRecord.expected_outputs.target_files.length === 0 ? <div className="empty-note">No target files.</div> : null}
-                {selectedRecord.expected_outputs.target_files.map((file) => (
-                  <button
-                    key={`target-${file.path}`}
-                    className={selection?.group === 'target' && selection.path === file.path ? 'file-item active' : 'file-item'}
-                    onClick={() => setSelection({ group: 'target', path: file.path })}
-                  >
-                    {file.path}
-                    {file.redacted ? ' (redacted)' : ''}
-                  </button>
-                ))}
-              </div>
+                    <p>Expected Output</p>
+                    {selectedRecord.expected_outputs.target_files.length === 0 ? <div className="empty-note">No target files.</div> : null}
+                    {selectedRecord.expected_outputs.target_files.map((file) => (
+                      <button
+                        key={`target-${file.path}`}
+                        className={selection?.group === 'target' && selection.path === file.path ? 'file-item active' : 'file-item'}
+                        onClick={() => setSelection({ group: 'target', path: file.path })}
+                      >
+                        {file.path}
+                        {file.redacted ? ' (redacted)' : ''}
+                      </button>
+                    ))}
+                  </div>
 
-              <div className="file-viewer">
-                {selectedFile ? (
-                  <>
-                    <div className="file-title">{selectedFile.path}</div>
-                    {selectedFile.redacted ? <div className="redaction">Expected output is redacted in this dataset release.</div> : null}
-                    <CodeBlock file={selectedFile} />
-                  </>
-                ) : (
-                  <p>Select a file to view content.</p>
-                )}
-              </div>
-            </section>
+                  <div className="file-viewer">
+                    {selectedFile ? (
+                      <>
+                        <div className="file-title">{selectedFile.path}</div>
+                        {selectedFile.redacted ? <div className="redaction">Expected output is redacted in this dataset release.</div> : null}
+                        <CodeBlock file={selectedFile} />
+                      </>
+                    ) : (
+                      <p>Select a file to view content.</p>
+                    )}
+                  </div>
+                </section>
 
-            <section className="card">
-              <h3>Reference Response</h3>
-              {selectedRecord.expected_outputs.response_redacted ? (
-                <div className="redaction">Reference response is redacted in this dataset release.</div>
-              ) : (
-                <PromptMarkdown content={selectedRecord.expected_outputs.response_text} />
-              )}
-            </section>
+                <section className="card">
+                  <h3>Reference Response</h3>
+                  {selectedRecord.expected_outputs.response_redacted ? (
+                    <div className="redaction">Reference response is redacted in this dataset release.</div>
+                  ) : (
+                    <PromptMarkdown content={selectedRecord.expected_outputs.response_text} />
+                  )}
+                </section>
+              </>
+            )}
           </>
         )}
       </main>

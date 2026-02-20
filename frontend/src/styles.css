@@ -333,12 +333,163 @@ body {
   padding: 1rem;
 }
 
+.panel-switch {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.panel-switch-button {
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #334155;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.panel-switch-button.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
 .card {
   background: white;
   border: 1px solid #d1d5db;
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 1rem;
+}
+
+.guide-card h2,
+.guide-card h3 {
+  margin-top: 0;
+}
+
+.guide-source-list {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.guide-flow-list {
+  margin: 0.3rem 0 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.guide-flow-item h4 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.guide-flow-item p {
+  margin: 0.25rem 0 0;
+}
+
+.guide-source {
+  color: #334155;
+  font-size: 0.82rem;
+}
+
+.guide-table-wrap {
+  overflow-x: auto;
+}
+
+.guide-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 920px;
+}
+
+.guide-table th,
+.guide-table td {
+  border: 1px solid #dbe5f0;
+  padding: 0.5rem;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.82rem;
+}
+
+.guide-table th {
+  background: #f8fafc;
+  color: #334155;
+}
+
+.guide-category-title {
+  display: grid;
+  gap: 0.16rem;
+}
+
+.guide-category-description,
+.guide-category-evaluation {
+  margin: 0;
+}
+
+.guide-category-evaluation {
+  margin-top: 0.22rem;
+  color: #475569;
+  font-size: 0.76rem;
+}
+
+.guide-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 0.12rem 0.42rem;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.guide-chip--task-gen {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+  color: #115e59;
+}
+
+.guide-chip--task-comp {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.guide-chip--availability-both {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+.guide-chip--availability-agentic {
+  border-color: #67e8f9;
+  background: #ecfeff;
+  color: #155e75;
+}
+
+.guide-chip--availability-nonagentic {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.guide-chip--scoring-threshold {
+  border-color: #86efac;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.guide-chip--scoring-bleu {
+  border-color: #fdba74;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.guide-chip--scoring-llm {
+  border-color: #c4b5fd;
+  background: #f5f3ff;
+  color: #5b21b6;
 }
 
 .record-header h2 {

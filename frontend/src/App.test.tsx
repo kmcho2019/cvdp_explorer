@@ -149,6 +149,36 @@ describe('App', () => {
     expect(screen.getByText('System prompt')).toBeInTheDocument()
   })
 
+  it('renders benchmark guide section with evaluation flow and category details', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(makeRecordPayload()) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByRole('heading', { level: 2, name: 'demo case' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Benchmark Guide' }))
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Comprehensive Verilog Design Problems (CVDP)' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 3, name: 'How Evaluation Works' })).toBeInTheDocument()
+    expect(screen.getByText('cid013')).toBeInTheDocument()
+    expect(screen.getByText('Test Plan to Testbench Checker')).toBeInTheDocument()
+    expect(screen.getAllByText(/cvdp_benchmark\/run_benchmark.py/).length).toBeGreaterThan(0)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Record Explorer' }))
+    expect(screen.getByRole('heading', { level: 2, name: 'demo case' })).toBeInTheDocument()
+  })
+
   it('applies semantic badge classes for record metadata', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)

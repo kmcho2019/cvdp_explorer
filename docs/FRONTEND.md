@@ -30,6 +30,8 @@ The frontend is a static React application for browsing normalized CVDP records 
   - category-ID label/description mapping for more interpretable category UI text
 - `frontend/src/lib/hierarchy.ts`
   - tree hierarchy builder for task-type/category/mode/difficulty navigation
+- `frontend/src/lib/benchmarkGuide.ts`
+  - in-app benchmark overview/evaluation-flow/category-reference content model
 - `frontend/src/styles.css`
   - layout, visual design, and state styling
 - `frontend/src/App.test.tsx`
@@ -44,6 +46,8 @@ The frontend is a static React application for browsing normalized CVDP records 
   - category-description mapping regression coverage
 - `frontend/src/lib/hierarchy.test.ts`
   - hierarchy aggregation and ordering regression coverage
+- `frontend/src/lib/benchmarkGuide.test.ts`
+  - benchmark-guide dataset integrity and label mapping coverage
 
 ## 4. Data Loading and State Model
 
@@ -104,6 +108,12 @@ Alternative hierarchy navigation:
 - tree node clicks apply the same underlying filters as dropdown controls
 - hierarchy nodes are color-coded via the same semantic badge system used in record metadata
 
+Benchmark guide section:
+
+- the main panel includes a dedicated `Benchmark Guide` section alongside the record explorer
+- the guide summarizes benchmark goals, explains evaluation flow from submodule internals, and provides per-category behavior/scoring references
+- all guide entries include source-path pointers back to `cvdp_benchmark` and paper/reference materials for traceability
+
 ## 6. Syntax Highlighting and Performance Guardrail
 
 Prism language mapping is handled by `mapPrismLanguage`:
@@ -158,6 +168,12 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - hierarchy node aggregation counts across task type/category/mode/difficulty
 - deterministic ordering for semantic navigation levels
 
+`frontend/src/lib/benchmarkGuide.test.ts` covers:
+
+- expected category coverage for the initial CVDP release
+- scoring/availability label behavior used by the guide table
+- evaluation-flow step structure integrity
+
 `frontend/src/lib/useDebouncedValue.test.ts` covers:
 
 - debounce timing behavior
@@ -172,6 +188,7 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - large-file performance notice rendering
 - category filter + selected record synchronization behavior
 - hierarchy navigation interactions across task type/category/mode/difficulty
+- benchmark-guide section rendering and section-switch behavior
 - virtualization behavior for long record lists
 - URL-query hydration for selected ID + filters (including task type)
 - URL-query updates for debounced search and filters (including task type)
