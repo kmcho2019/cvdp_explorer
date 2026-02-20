@@ -118,6 +118,7 @@ Benchmark guide section:
 - a dedicated explorer-to-runtime mapping table explains how prompt/context/harness/reference fields map to `cvdp_benchmark` pipeline internals
 - interaction cases are rendered as Mermaid diagrams for objective generation, BLEU/ROUGE comprehension, LLM-subjective comprehension, agentic patch loop, context-heavy git workspaces, and commercial EDA overlays
 - all guide entries include source-path pointers back to `cvdp_benchmark` and paper/reference materials for traceability
+- Mermaid diagrams use deterministic component-scoped IDs and async loading state handling to avoid rerender churn and visual flicker
 - Mermaid rendering falls back to raw diagram source blocks if runtime rendering is unavailable
 
 ## 6. Syntax Highlighting and Performance Guardrail
@@ -199,6 +200,7 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - hierarchy navigation interactions across task type/category/mode/difficulty
 - benchmark-guide section rendering and section-switch behavior
 - benchmark-guide interaction map and diagram section rendering
+- benchmark-guide interaction case visibility coverage across all defined runtime paths
 - virtualization behavior for long record lists
 - URL-query hydration for selected ID + filters (including task type)
 - URL-query updates for debounced search and filters (including task type)

@@ -508,6 +508,15 @@ body {
   margin: 0 auto;
 }
 
+.guide-diagram-loading {
+  border: 1px dashed #93c5fd;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 0.78rem;
+  padding: 0.6rem;
+}
+
 .guide-diagram-fallback {
   margin: 0;
   border: 1px solid #e2e8f0;

@@ -276,12 +276,18 @@ function FileViewerContent({ file }: { file: FileEntry }): JSX.Element {
 }
 
 function MermaidDiagram({ chart, title }: { chart: string; title: string }): JSX.Element {
-  const diagramIdRef = useRef(nextMermaidDiagramId())
+  const diagramIdRef = useRef<string>('')
+  if (diagramIdRef.current === '') {
+    diagramIdRef.current = nextMermaidDiagramId()
+  }
+
   const [svg, setSvg] = useState<string>('')
-  const [fallback, setFallback] = useState(false)
+  const [renderState, setRenderState] = useState<'loading' | 'ready' | 'failed'>('loading')
 
   useEffect(() => {
     let cancelled = false
+    setRenderState('loading')
+    setSvg('')
 
     const renderMermaid = async (): Promise<void> => {
       try {
@@ -313,12 +319,12 @@ function MermaidDiagram({ chart, title }: { chart: string; title: string }): JSX
         const renderResult = await mermaid.render(diagramIdRef.current, chart)
         if (!cancelled) {
           setSvg(renderResult.svg)
-          setFallback(false)
+          setRenderState('ready')
         }
       } catch {
         if (!cancelled) {
           setSvg('')
-          setFallback(true)
+          setRenderState('failed')
         }
       }
     }
@@ -333,14 +339,18 @@ function MermaidDiagram({ chart, title }: { chart: string; title: string }): JSX
   return (
     <figure className="guide-diagram">
       <figcaption>{title}</figcaption>
-      {svg !== '' ? (
+      {renderState === 'ready' && svg !== '' ? (
         <div className="guide-mermaid" dangerouslySetInnerHTML={{ __html: svg }} />
+      ) : renderState === 'loading' ? (
+        <div className="guide-diagram-loading" role="status" aria-label="Rendering diagram">
+          Rendering diagram...
+        </div>
       ) : (
         <pre className="guide-diagram-fallback">
           <code>{chart}</code>
         </pre>
       )}
-      {fallback ? <p className="guide-diagram-note">Diagram renderer unavailable; showing Mermaid source fallback.</p> : null}
+      {renderState === 'failed' ? <p className="guide-diagram-note">Diagram renderer unavailable; showing Mermaid source fallback.</p> : null}
     </figure>
   )
 }

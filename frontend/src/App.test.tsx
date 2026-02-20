@@ -178,6 +178,10 @@ describe('App', () => {
     expect(screen.getByText('System/User Prompt')).toBeInTheDocument()
     expect(screen.getAllByText('Objective Harness Path (Code Generation)').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Comprehension BLEU/ROUGE Path').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Comprehension LLM-Subjective Path').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Agentic Patch-and-Harness Loop').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Context-Heavy Git Workspace Path').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Commercial EDA Network Overlay').length).toBeGreaterThan(0)
     expect(screen.getAllByText(/cvdp_benchmark\/run_benchmark.py/).length).toBeGreaterThan(0)
 
     fireEvent.click(screen.getByRole('button', { name: 'Record Explorer' }))
