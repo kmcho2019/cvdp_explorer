@@ -21,6 +21,26 @@ Core orchestrators:
 - `cvdp_benchmark/src/repository.py`
 - `cvdp_benchmark/src/report.py`
 
+### 1.1 Entry-point and module dependency map
+
+```mermaid
+flowchart LR
+  RS[run_samples.py] --> RB[run_benchmark.py]
+  RB --> AC[argparse_common.py]
+  RB --> WR[wrapper.py]
+  RB --> RP[report.py]
+  RR[run_reporter.py] --> RP
+
+  WR --> DP[dataset_processor.py]
+  WR --> DT[data_transformer.py]
+
+  DP --> REPO[repository.py]
+  DP --> PE[parallel_executor.py]
+  DP --> GU[git_utils.py]
+```
+
+This shows the core execution graph from CLI entrypoints through processing and reporting modules.
+
 ## 2. Repository Structure and Responsibilities
 
 `cvdp_benchmark/src/` modules you care about most:
@@ -130,6 +150,21 @@ Scoring mode depends on category constants (`src/constants.py`):
 - binary pass/fail problem scoring for most categories.
 - score-based aggregation (BLEU/LLM subjective score) for configured categories.
 
+### 3.4 Dataset shape routing at runtime
+
+```mermaid
+flowchart TD
+  JL[JSONL record] --> ID{Record ID prefix}
+  ID -->|cvdp_copilot_*| COP[Copilot schema]
+  ID -->|cvdp_agentic_*| AGT[Agentic schema]
+
+  COP --> COPF["id, categories, input.context, output.context/response, harness.files"]
+  AGT --> AGTF["id, categories, system_message, prompt, context, patch, harness"]
+
+  COPF --> PROC["processor context map: self.context[id]"]
+  AGTF --> PROC
+```
+
 ## 4. End-to-End Processing Pipeline
 
 ## 4.1 Command and mode selection
@@ -159,7 +194,38 @@ Both modes follow this broad flow:
   - Save raw output to `raw_result.json`.
   - Aggregate with `Report(...)` into `report.json` and text report.
 
-### 4.3 Non-agentic (Copilot) internals
+### 4.3 End-to-end benchmark execution flow
+
+```mermaid
+flowchart LR
+  CLI[run_benchmark.py] --> PARSE[Parse args]
+  PARSE --> FORCE{force mode flags?}
+  FORCE -->|yes| XFORM[DataTransformer]
+  FORCE -->|no| DETECT[Detect mode from ID]
+  XFORM --> DETECT
+
+  DETECT --> MODE{agentic or copilot}
+  MODE -->|copilot| CP[CopilotBenchmark/CopilotProcessor]
+  MODE -->|agentic| AP[AgenticBenchmark/AgenticProcessor]
+
+  CP --> PJ1[process_json]
+  AP --> PJ2[process_json]
+
+  PJ1 --> PREP1[all_prepare]
+  PJ2 --> PREP2[all_prepare]
+  PREP2 --> GOLDEN{golden run?}
+  GOLDEN -->|no| ALLAG[all_agent]
+  GOLDEN -->|yes| RUN2[all_run]
+  ALLAG --> RUN2
+  PREP1 --> RUN1[all_run]
+
+  RUN1 --> RAW1[raw_result.json]
+  RUN2 --> RAW2[raw_result.json]
+  RAW1 --> REP[report.json + report.txt]
+  RAW2 --> REP
+```
+
+### 4.4 Non-agentic (Copilot) internals
 
 `CopilotProcessor.create_context()` has two branches:
 
@@ -175,7 +241,7 @@ Both modes follow this broad flow:
 
 Execution uses repository objective harness (`docker-compose.yml` services) and subjective scoring path when applicable.
 
-### 4.4 Agentic internals
+### 4.5 Agentic internals
 
 `AgenticProcessor` extends behavior with agent execution:
 
@@ -206,6 +272,29 @@ Primary logic:
 
 This avoids duplicating full source trees across datapoints and keeps repeated runs faster.
 
+### 5.1 Context-heavy execution sequence
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant CLI as run_benchmark.py
+  participant AP as AgenticProcessor
+  participant GM as GitRepositoryManager
+  participant DV as Docker Volume Workspace
+  participant AG as Agent Container
+  participant HR as Harness Runner
+
+  CLI->>AP: start non-golden agentic run
+  AP->>GM: create/reuse mirror and workspace
+  GM->>DV: checkout commit and apply dataset patch
+  AP->>AG: run agent (docker-compose-agent.yml)
+  AG->>DV: modify source tree
+  AP->>AP: capture diff to agent_changes.patch
+  AP->>HR: run objective and subjective harness
+  HR->>DV: mount workspace and execute tests
+  HR-->>CLI: per-id raw results and logs
+```
+
 ## 6. Harness Execution and Scoring
 
 `Repository` handles execution-level details:
@@ -223,6 +312,28 @@ This avoids duplicating full source trees across datapoints and keeps repeated r
   - either BLEU/ROUGE metrics or LLM-based subjective scoring depending on category/model config.
 
 The code includes timeout and process-tree kill logic (`DOCKER_TIMEOUT`, `exec_timeout`) and optional directory-size monitoring for runaway disk use.
+
+### 6.1 Scoring path decision flow
+
+```mermaid
+flowchart TD
+  START[Prepared harness workspace] --> RUN[Run objective harness]
+  RUN --> OBJ{Objective checks pass?}
+  OBJ -->|no| FAIL[Mark objective failure]
+  OBJ -->|yes| CAT{Category requires subjective scoring?}
+  CAT -->|no| PASS[Finalize objective pass/score]
+  CAT -->|yes| HASREF{Reference text available?}
+  HASREF -->|no| MISS[Record missing subjective reference]
+  HASREF -->|yes| METRIC{Subjective scoring mode}
+  METRIC -->|BLEU/ROUGE| SBJ1[Compute lexical metric]
+  METRIC -->|LLM judge| SBJ2[Run judge model scoring]
+  SBJ1 --> MERGE[Merge with objective outcome]
+  SBJ2 --> MERGE
+  MISS --> MERGE
+  FAIL --> OUT[Write raw_result entry]
+  PASS --> OUT
+  MERGE --> OUT
+```
 
 ## 7. Parallelization and Fault Handling
 
@@ -272,6 +383,22 @@ Single-issue mode still updates/report-generates from accumulated `raw_result.js
 
 - sample subdirectories (`sample_1`, `sample_2`, ...).
 - `composite_report.json` + text output with pass@k analysis inputs.
+
+### 9.1 Output artifact map
+
+```mermaid
+flowchart TD
+  ROOT["<run prefix>/"] --> RAW[raw_result.json]
+  ROOT --> RJ[report.json]
+  ROOT --> RT[report.txt]
+  ROOT --> HROOT["cvdp_*/harness/{id}/"]
+  ROOT --> RROOT["cvdp_*/reports/{id}/"]
+
+  ROOT --> SAMPLES[sample_1 ... sample_k]
+  SAMPLES --> SRAW[raw_result.json per sample]
+  SAMPLES --> SREP[report.json and report.txt per sample]
+  ROOT --> CCOMP[composite_report.json]
+```
 
 ## 10. Practical Notes for Explorer Integration
 
