@@ -171,8 +171,13 @@ describe('App', () => {
 
     expect(screen.getByRole('heading', { level: 2, name: 'Comprehensive Verilog Design Problems (CVDP)' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 3, name: 'How Evaluation Works' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 3, name: 'Explorer-to-Evaluation Field Mapping' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 3, name: 'Evaluation Interaction Diagrams' })).toBeInTheDocument()
     expect(screen.getByText('cid013')).toBeInTheDocument()
     expect(screen.getByText('Test Plan to Testbench Checker')).toBeInTheDocument()
+    expect(screen.getByText('System/User Prompt')).toBeInTheDocument()
+    expect(screen.getAllByText('Objective Harness Path (Code Generation)').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Comprehension BLEU/ROUGE Path').length).toBeGreaterThan(0)
     expect(screen.getAllByText(/cvdp_benchmark\/run_benchmark.py/).length).toBeGreaterThan(0)
 
     fireEvent.click(screen.getByRole('button', { name: 'Record Explorer' }))

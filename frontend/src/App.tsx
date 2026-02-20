@@ -11,9 +11,12 @@ import { formatCategoryLabel } from './lib/categories'
 import { buildFilterHierarchy } from './lib/hierarchy'
 import {
   availabilityLabel,
+  BENCHMARK_INTERACTION_CASES,
   BENCHMARK_OVERVIEW,
+  CATEGORY_TO_INTERACTION_CASE,
   CATEGORY_GUIDE_ROWS,
   EVALUATION_FLOW_STEPS,
+  EXPLORER_RUNTIME_MAPPINGS,
   scoringModeLabel,
   type BenchmarkCategoryGuide,
 } from './lib/benchmarkGuide'
@@ -78,6 +81,13 @@ const LARGE_FILE_HIGHLIGHT_THRESHOLD = 120_000
 const SIDEBAR_ROW_HEIGHT = 118
 const SIDEBAR_OVERSCAN = 8
 const SEARCH_DEBOUNCE_MS = 120
+let mermaidInitialized = false
+let mermaidDiagramSequence = 0
+
+function nextMermaidDiagramId(): string {
+  mermaidDiagramSequence += 1
+  return `cvdp-guide-mermaid-${mermaidDiagramSequence}`
+}
 
 function normalizeNamedFilter(value: string | null): string {
   const trimmed = value?.trim() ?? ''
@@ -117,6 +127,12 @@ function availabilityBadgeClassName(category: BenchmarkCategoryGuide): string {
   if (category.availability === 'both') return 'guide-chip guide-chip--availability-both'
   if (category.availability === 'agentic_only') return 'guide-chip guide-chip--availability-agentic'
   return 'guide-chip guide-chip--availability-nonagentic'
+}
+
+function interactionPathChipClassName(pathId: string): string {
+  if (pathId === 'bleu_rouge_comprehension') return 'guide-chip guide-chip--scoring-bleu'
+  if (pathId === 'llm_subjective_comprehension') return 'guide-chip guide-chip--scoring-llm'
+  return 'guide-chip guide-chip--scoring-threshold'
 }
 
 function readUrlState(): UrlState {
@@ -259,7 +275,81 @@ function FileViewerContent({ file }: { file: FileEntry }): JSX.Element {
   return <CodeBlock file={file} />
 }
 
+function MermaidDiagram({ chart, title }: { chart: string; title: string }): JSX.Element {
+  const diagramIdRef = useRef(nextMermaidDiagramId())
+  const [svg, setSvg] = useState<string>('')
+  const [fallback, setFallback] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const renderMermaid = async (): Promise<void> => {
+      try {
+        const mermaidModule = await import('mermaid')
+        const mermaid = mermaidModule.default
+
+        if (!mermaidInitialized) {
+          mermaid.initialize({
+            startOnLoad: false,
+            securityLevel: 'strict',
+            theme: 'base',
+            themeVariables: {
+              primaryColor: '#eff6ff',
+              primaryTextColor: '#0f172a',
+              primaryBorderColor: '#2563eb',
+              lineColor: '#334155',
+              secondaryColor: '#f8fafc',
+              tertiaryColor: '#eef2ff',
+              fontFamily: '"IBM Plex Sans", "Segoe UI", sans-serif',
+            },
+            flowchart: {
+              useMaxWidth: true,
+              curve: 'basis',
+            },
+          })
+          mermaidInitialized = true
+        }
+
+        const renderResult = await mermaid.render(diagramIdRef.current, chart)
+        if (!cancelled) {
+          setSvg(renderResult.svg)
+          setFallback(false)
+        }
+      } catch {
+        if (!cancelled) {
+          setSvg('')
+          setFallback(true)
+        }
+      }
+    }
+
+    void renderMermaid()
+
+    return () => {
+      cancelled = true
+    }
+  }, [chart])
+
+  return (
+    <figure className="guide-diagram">
+      <figcaption>{title}</figcaption>
+      {svg !== '' ? (
+        <div className="guide-mermaid" dangerouslySetInnerHTML={{ __html: svg }} />
+      ) : (
+        <pre className="guide-diagram-fallback">
+          <code>{chart}</code>
+        </pre>
+      )}
+      {fallback ? <p className="guide-diagram-note">Diagram renderer unavailable; showing Mermaid source fallback.</p> : null}
+    </figure>
+  )
+}
+
 function BenchmarkGuidePanel(): JSX.Element {
+  const interactionCaseById = useMemo(() => {
+    return new Map(BENCHMARK_INTERACTION_CASES.map((interactionCase) => [interactionCase.id, interactionCase]))
+  }, [])
+
   return (
     <>
       <section className="card guide-card">
@@ -292,6 +382,41 @@ function BenchmarkGuidePanel(): JSX.Element {
       </section>
 
       <section className="card guide-card">
+        <h3>Explorer-to-Evaluation Field Mapping</h3>
+        <p>
+          This map shows how each explorer section is consumed by the benchmark runtime during dataset preparation, harness execution, and final reporting.
+        </p>
+        <div className="guide-table-wrap">
+          <table className="guide-table guide-table--mapping">
+            <thead>
+              <tr>
+                <th>Explorer Surface</th>
+                <th>JSONL Field</th>
+                <th>Runtime Consumer</th>
+                <th>Evaluation Effect</th>
+                <th>Primary Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {EXPLORER_RUNTIME_MAPPINGS.map((mapping) => (
+                <tr key={mapping.explorerSurface}>
+                  <td>{mapping.explorerSurface}</td>
+                  <td>
+                    <code>{mapping.benchmarkJsonlField}</code>
+                  </td>
+                  <td>{mapping.runtimeConsumer}</td>
+                  <td>{mapping.outputEffect}</td>
+                  <td>
+                    <code>{mapping.source}</code>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="card guide-card">
         <h3>Category Reference</h3>
         <p>Each category below maps to a concrete evaluation pattern in the benchmark infrastructure.</p>
         <div className="guide-table-wrap">
@@ -302,6 +427,7 @@ function BenchmarkGuidePanel(): JSX.Element {
                 <th>Task Type</th>
                 <th>Availability</th>
                 <th>Scoring</th>
+                <th>Primary Execution Path</th>
                 <th>How It Works</th>
               </tr>
             </thead>
@@ -326,6 +452,11 @@ function BenchmarkGuidePanel(): JSX.Element {
                     <span className={scoringBadgeClassName(category)}>{scoringModeLabel(category.scoringMode)}</span>
                   </td>
                   <td>
+                    <span className={interactionPathChipClassName(CATEGORY_TO_INTERACTION_CASE[category.id])}>
+                      {interactionCaseById.get(CATEGORY_TO_INTERACTION_CASE[category.id])?.title ?? 'Unknown path'}
+                    </span>
+                  </td>
+                  <td>
                     <p className="guide-category-description">{category.description}</p>
                     <p className="guide-category-evaluation">{category.evaluation}</p>
                   </td>
@@ -333,6 +464,36 @@ function BenchmarkGuidePanel(): JSX.Element {
               ))}
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <section className="card guide-card">
+        <h3>Evaluation Interaction Diagrams</h3>
+        <p>
+          The following diagrams summarize the main runtime interaction paths implemented in the upstream benchmark repository, including agentic and
+          commercial-EDA-specific branches.
+        </p>
+        <div className="guide-case-grid">
+          {BENCHMARK_INTERACTION_CASES.map((interactionCase) => (
+            <article key={interactionCase.id} className="guide-case-card">
+              <header className="guide-case-header">
+                <h4>{interactionCase.title}</h4>
+                <span className={interactionPathChipClassName(interactionCase.id)}>{interactionCase.appliesTo}</span>
+              </header>
+              <p className="guide-case-summary">{interactionCase.summary}</p>
+              <p className="guide-case-categories">
+                Categories:
+                {interactionCase.categories.length === 0 ? ' n/a' : ` ${interactionCase.categories.join(', ')}`}
+              </p>
+              <MermaidDiagram chart={interactionCase.mermaid} title={`${interactionCase.title} flow`} />
+              <p className="guide-case-output">
+                Outputs: <span>{interactionCase.outputs}</span>
+              </p>
+              <p className="guide-source">
+                Sources: {interactionCase.sourcePaths.map((source) => <code key={source}>{source}</code>)}
+              </p>
+            </article>
+          ))}
         </div>
       </section>
     </>

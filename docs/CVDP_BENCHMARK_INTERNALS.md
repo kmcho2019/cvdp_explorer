@@ -410,6 +410,58 @@ Given the submodule behavior, Explorer-side assumptions should be:
 - Subjective response may appear in `output.response` (copilot) or be materialized as `subjective.txt` during processing.
 - Agentic `patch` data can be raw/unified-diff text, and may be empty in public releases.
 
+### 10.1 Explorer field-to-runtime mapping (new in-app guide section)
+
+The explorer now includes a dedicated mapping view that aligns UI sections with runtime consumers:
+
+- `Prompt` -> `input.prompt` (copilot) / `prompt` (agentic) -> `create_context()` prompt construction.
+- `Context files` -> `input.context` / `context` -> `Repository.prepare()` workspace creation.
+- `Harness files` -> `harness.files` or direct `harness` map -> `obj_harness()` Docker service execution.
+- `Reference response` -> `output.response` / `subjective_reference` -> `run_subjective_scoring()` and `Repository.sbj()`.
+- per-problem outcomes -> `raw_result.json` -> `Report.format_report()` for category/difficulty aggregates.
+
+### 10.2 Category routing and interaction paths
+
+```mermaid
+flowchart TD
+  CAT[Category cidNNN] --> CLASS{Category class}
+  CLASS -->|cid002,3,4,5,7,12,13,14,16| OBJ[Objective harness path]
+  CLASS -->|cid006,8| BLEU[Comprehension BLEU/ROUGE path]
+  CLASS -->|cid009,10| LLM[Comprehension LLM-subjective path]
+
+  OBJ --> PREP[Repository.prepare]
+  PREP --> HAR[Repository.obj_harness]
+  HAR --> RAW[raw_result.json]
+
+  BLEU --> SBJ1[run_subjective_scoring -> Repository.sbj]
+  LLM --> SBJ2[run_subjective_scoring -> subjective_score model]
+  SBJ1 --> RAW
+  SBJ2 --> RAW
+
+  RAW --> REP[Report.format_report -> report.json/report.txt]
+```
+
+### 10.3 Agentic and infra-specific overlays
+
+```mermaid
+flowchart LR
+  A[Agentic non-golden run] --> B[all_prepare]
+  B --> C[all_agent/th_agent]
+  C --> D[Agent container edits workspace]
+  D --> E[agent_changes.patch capture]
+  E --> F[run dispatch objective or subjective path]
+
+  A --> G{context-heavy repo+commit?}
+  G -->|yes| H[git_utils.create_volume_with_checkout]
+  H --> I[volume-backed /code workspace]
+  I --> C
+
+  A --> J{EDA templates or cid12/13/14?}
+  J -->|yes| K[commercial_eda.validate_*]
+  K --> L[license network + image checks]
+  L --> M[compose network injection for harness/agent]
+```
+
 ## 11. Useful Files for Further Inspection
 
 - `cvdp_benchmark/run_benchmark.py`

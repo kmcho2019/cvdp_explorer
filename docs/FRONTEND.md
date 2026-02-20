@@ -15,6 +15,7 @@ The frontend is a static React application for browsing normalized CVDP records 
 - React 18 + TypeScript
 - Vite 5
 - `react-markdown` + `remark-gfm`
+- `mermaid` (runtime-rendered benchmark interaction diagrams)
 - `prismjs` for syntax highlighting
 - Vitest + Testing Library for UI and utility tests
 
@@ -32,8 +33,9 @@ The frontend is a static React application for browsing normalized CVDP records 
   - tree hierarchy builder for task-type/category/mode/difficulty navigation
 - `frontend/src/lib/benchmarkGuide.ts`
   - in-app benchmark overview/evaluation-flow/category-reference content model
+  - explorer-to-runtime field mappings and per-path interaction diagram definitions
 - `frontend/src/styles.css`
-  - layout, visual design, and state styling
+  - layout, visual design, and state styling (including responsive benchmark diagram rendering)
 - `frontend/src/App.test.tsx`
   - App-level UI behavior tests
 - `frontend/src/lib/explorer.test.ts`
@@ -113,7 +115,10 @@ Benchmark guide section:
 
 - the main panel includes a dedicated `Benchmark Guide` section alongside the record explorer
 - the guide summarizes benchmark goals, explains evaluation flow from submodule internals, and provides per-category behavior/scoring references
+- a dedicated explorer-to-runtime mapping table explains how prompt/context/harness/reference fields map to `cvdp_benchmark` pipeline internals
+- interaction cases are rendered as Mermaid diagrams for objective generation, BLEU/ROUGE comprehension, LLM-subjective comprehension, agentic patch loop, context-heavy git workspaces, and commercial EDA overlays
 - all guide entries include source-path pointers back to `cvdp_benchmark` and paper/reference materials for traceability
+- Mermaid rendering falls back to raw diagram source blocks if runtime rendering is unavailable
 
 ## 6. Syntax Highlighting and Performance Guardrail
 
@@ -174,6 +179,9 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - expected category coverage for the initial CVDP release
 - scoring/availability label behavior used by the guide table
 - evaluation-flow step structure integrity
+- category-to-interaction-path coverage integrity
+- interaction-case source and Mermaid-definition sanity checks
+- explorer-runtime mapping coverage for key explorer surfaces
 
 `frontend/src/lib/useDebouncedValue.test.ts` covers:
 
@@ -190,6 +198,7 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - category filter + selected record synchronization behavior
 - hierarchy navigation interactions across task type/category/mode/difficulty
 - benchmark-guide section rendering and section-switch behavior
+- benchmark-guide interaction map and diagram section rendering
 - virtualization behavior for long record lists
 - URL-query hydration for selected ID + filters (including task type)
 - URL-query updates for debounced search and filters (including task type)

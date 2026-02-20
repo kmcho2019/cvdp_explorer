@@ -418,6 +418,10 @@ body {
   color: #334155;
 }
 
+.guide-table--mapping {
+  min-width: 1080px;
+}
+
 .guide-category-title {
   display: grid;
   gap: 0.16rem;
@@ -432,6 +436,102 @@ body {
   margin-top: 0.22rem;
   color: #475569;
   font-size: 0.76rem;
+}
+
+.guide-case-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 0.85rem;
+}
+
+.guide-case-card {
+  border: 1px solid #dbe5f0;
+  border-radius: 12px;
+  padding: 0.75rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.guide-case-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.38rem;
+}
+
+.guide-case-header h4 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.guide-case-summary,
+.guide-case-categories,
+.guide-case-output {
+  margin: 0.3rem 0 0;
+  font-size: 0.82rem;
+  color: #334155;
+}
+
+.guide-case-output span {
+  color: #0f172a;
+}
+
+.guide-diagram {
+  margin: 0.55rem 0 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  padding: 0.55rem;
+}
+
+.guide-diagram figcaption {
+  font-size: 0.76rem;
+  color: #334155;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.guide-mermaid {
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0.35rem;
+}
+
+.guide-mermaid svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 560px;
+  margin: 0 auto;
+}
+
+.guide-diagram-fallback {
+  margin: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.55rem;
+  background: #f8fafc;
+  overflow: auto;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.guide-diagram-note {
+  margin: 0.4rem 0 0;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.guide-source {
+  margin-top: 0.32rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.28rem;
 }
 
 .guide-chip {
@@ -712,5 +812,13 @@ body {
 
   .file-layout {
     grid-template-columns: 1fr;
+  }
+
+  .guide-case-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .guide-mermaid svg {
+    min-width: 460px;
   }
 }
