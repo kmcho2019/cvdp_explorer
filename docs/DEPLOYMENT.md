@@ -34,11 +34,12 @@ flowchart LR
 ### 2.3 What the workflow does
 
 1. Checks out repository with submodules.
-2. Installs Python + Node toolchains.
-3. Runs preprocessing (`python data/scripts/process_cvdp.py`).
-4. Builds frontend bundle (`npm run build` in `frontend/`).
-5. Uploads `frontend/dist` as Pages artifact.
-6. Deploys artifact to GitHub Pages.
+2. Installs uv/Python + Node toolchains.
+3. Syncs Python tooling via `uv sync`.
+4. Runs preprocessing (`uv run python data/scripts/process_cvdp.py`).
+5. Builds frontend bundle (`npm run build` in `frontend/`).
+6. Uploads `frontend/dist` as Pages artifact.
+7. Deploys artifact to GitHub Pages.
 
 ### 2.4 Verify deployment
 
@@ -108,10 +109,13 @@ This helps catch path issues before pushing to `main`.
 From repo root:
 
 ```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
 git submodule update --init --recursive
-python -m pip install -r data/scripts/requirements.txt
-python -m pytest -q data/scripts/tests
-python data/scripts/process_cvdp.py
+uv sync --group dev
+uv run ruff check data/scripts
+uv run ty check data/scripts
+uv run pytest -q data/scripts/tests
+uv run python data/scripts/process_cvdp.py
 cd frontend
 npm ci
 npm test
@@ -139,7 +143,7 @@ Likely cause:
 
 Check:
 
-- `deploy.yml` build logs for `python data/scripts/process_cvdp.py`
+- `deploy.yml` build logs for `uv run python data/scripts/process_cvdp.py`
 - artifact contents include `frontend/dist/data/index.json`
 
 ### 5.3 Submodule-related failures in CI/CD

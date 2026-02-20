@@ -11,22 +11,35 @@ The repo uses layered checks:
 
 ## 2. Local Test Matrix
 
-Install Python test dependencies:
+Install uv (once per machine):
 
 ```bash
-python -m pip install -r data/scripts/requirements.txt
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Sync Python tooling and dependencies with uv:
+
+```bash
+uv sync --group dev
 ```
 
 Data pipeline tests:
 
 ```bash
-python -m pytest -q data/scripts/tests
+uv run pytest -q data/scripts/tests
+```
+
+Python lint/type checks:
+
+```bash
+uv run ruff check data/scripts
+uv run ty check data/scripts
 ```
 
 Rebuild normalized artifacts (when pipeline or source data assumptions change):
 
 ```bash
-python data/scripts/process_cvdp.py
+uv run python data/scripts/process_cvdp.py
 ```
 
 Frontend test dependencies + tests:
@@ -75,7 +88,9 @@ Frontend tests currently validate:
 `/.github/workflows/ci.yml`:
 
 - checks out repo (with submodules)
-- installs Python + Node toolchains
+- installs uv/Python + Node toolchains
+- runs Python lint checks (`ruff`)
+- runs Python type checks (`ty`)
 - runs data-pipeline tests
 - runs data preprocessing
 - runs frontend tests
@@ -92,11 +107,12 @@ Frontend tests currently validate:
 
 Before merging any non-trivial change:
 
-1. Run data tests.
-2. Run frontend tests.
-3. Run frontend build.
-4. Rebuild processed data if pipeline/schema changed.
-5. Update docs for behavior/contract changes.
+1. Run Python lint/type checks.
+2. Run data tests.
+3. Run frontend tests.
+4. Run frontend build.
+5. Rebuild processed data if pipeline/schema changed.
+6. Update docs for behavior/contract changes.
 
 ## 6. Troubleshooting Quick Notes
 
@@ -107,7 +123,7 @@ Frontend tests failing in jsdom:
 
 Data tests failing with import errors:
 
-- ensure tests are run from repo root (`python -m pytest -q data/scripts/tests`)
+- ensure tests are run from repo root (`uv run pytest -q data/scripts/tests`)
 - verify `data/scripts/tests/conftest.py` path injection remains intact
 
 Build succeeds locally but fails in CI:

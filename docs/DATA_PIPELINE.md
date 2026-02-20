@@ -15,7 +15,7 @@ Entry point:
 Default run:
 
 ```bash
-python data/scripts/process_cvdp.py
+uv run python data/scripts/process_cvdp.py
 ```
 
 ## 2. Inputs and Outputs
@@ -143,5 +143,5 @@ Covered behaviors:
 Run:
 
 ```bash
-python -m pytest -q data/scripts/tests
+uv run pytest -q data/scripts/tests
 ```

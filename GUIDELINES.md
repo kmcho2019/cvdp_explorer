@@ -75,26 +75,39 @@ Rule of thumb:
 
 Minimum local checks before merge:
 
-1. Data pipeline tests:
+1. Sync Python tooling:
 
 ```bash
-python -m pytest -q data/scripts/tests
+uv sync --group dev
 ```
 
-2. Regenerate data artifacts (when pipeline/schema changes):
+2. Python lint/type checks:
 
 ```bash
-python data/scripts/process_cvdp.py
+uv run ruff check data/scripts
+uv run ty check data/scripts
 ```
 
-3. Frontend tests:
+3. Data pipeline tests:
+
+```bash
+uv run pytest -q data/scripts/tests
+```
+
+4. Regenerate data artifacts (when pipeline/schema changes):
+
+```bash
+uv run python data/scripts/process_cvdp.py
+```
+
+5. Frontend tests:
 
 ```bash
 cd frontend
 npm test
 ```
 
-4. Frontend production build:
+6. Frontend production build:
 
 ```bash
 cd frontend
@@ -107,6 +120,12 @@ Expected quality bar:
 - Bug fixes should include regression coverage when feasible.
 - If tests are intentionally skipped, state why in the PR/commit body.
 
+Python tooling standard:
+
+- Use `uv` for Python environment and dependency management in this repo.
+- Add/update Python dependencies in `pyproject.toml` and run `uv lock` as needed.
+- Prefer `uv run ...` for Python commands in docs, CI, and local instructions.
+
 ## 6. Git Commit Guidelines
 
 Required:
@@ -118,10 +137,11 @@ Recommended format:
 ```text
 <type>(<scope>): <short imperative summary>
 
+Why:
 - motivation and context (the why)
-
+What:
 - key implementation changes (the what)
-
+Validation:
 - tests/build/commands run (validation)
 ```
 

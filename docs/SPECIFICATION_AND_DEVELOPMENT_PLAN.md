@@ -264,8 +264,8 @@ On push to `main` (and manual dispatch):
 - `actions/setup-node@v4` (`20`, npm cache)
 
 3. Build processed data:
-- `pip install -r data/scripts/requirements.txt`
-- `python data/scripts/process_cvdp.py`
+- `uv sync --group dev`
+- `uv run python data/scripts/process_cvdp.py`
 
 4. Build frontend:
 - `npm ci` in `frontend/`
@@ -286,12 +286,12 @@ For project pages (`https://<user>.github.io/<repo>/`), set Vite `base` to `/<re
 
 Deliverables:
 - initialize `frontend/` with Vite React TS app
-- add `data/scripts/requirements.txt` and parser scaffold
+- add root `pyproject.toml` (uv-managed Python tooling) and parser scaffold
 - add CI workflow scaffold
 
 Exit criteria:
 - `npm run dev` works
-- `python data/scripts/process_cvdp.py --help` works
+- `uv run python data/scripts/process_cvdp.py --help` works
 
 ### Phase 1: Data Parsing + Normalization
 
@@ -376,12 +376,12 @@ Exit criteria:
 
 7. Missing scripts/deps in current skeleton
 - Risk: devcontainer `postCreateCommand` references files not yet present.
-- Mitigation: implement `data/scripts/requirements.txt` and parser early (Phase 0/1).
+- Mitigation: implement uv-managed Python tooling (`pyproject.toml`) and parser early (Phase 0/1).
 
 ## 8. Immediate Next Build Tasks (Recommended)
 
 1. Scaffold `frontend/` Vite React TS app and baseline layout.
-2. Implement `data/scripts/process_cvdp.py` + `requirements.txt`.
+2. Implement `data/scripts/process_cvdp.py` + uv-managed Python tooling.
 3. Generate initial processed JSON into `frontend/public/data/`.
 4. Implement sidebar list and record detail loading.
 5. Add and validate GitHub Pages deployment workflow.

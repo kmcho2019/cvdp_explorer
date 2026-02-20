@@ -12,11 +12,17 @@ This repository converts raw benchmark JSONL files into a frontend-friendly form
 git submodule update --init --recursive
 ```
 
-## 2. Build normalized dataset artifacts
+## 2. Install uv and sync Python tooling
 
 ```bash
-python -m pip install -r data/scripts/requirements.txt
-python data/scripts/process_cvdp.py
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv sync --group dev
+```
+
+## 3. Build normalized dataset artifacts
+
+```bash
+uv run python data/scripts/process_cvdp.py
 ```
 
 This generates:
@@ -25,7 +31,7 @@ This generates:
 - `frontend/public/data/stats.json`
 - `frontend/public/data/records/*.json`
 
-## 3. Run frontend locally
+## 4. Run frontend locally
 
 ```bash
 cd frontend
@@ -38,7 +44,14 @@ npm run dev
 Python pipeline tests:
 
 ```bash
-python -m pytest -q data/scripts/tests
+uv run pytest -q data/scripts/tests
+```
+
+Python lint/type checks:
+
+```bash
+uv run ruff check data/scripts
+uv run ty check data/scripts
 ```
 
 Frontend tests:

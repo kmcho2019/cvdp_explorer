@@ -24,6 +24,6 @@ All project documentation is consolidated in this `docs/` directory.
 - `ARCHITECTURE.md`: high-level system architecture and repository layout.
 - `DATA_PIPELINE.md`: JSONL normalization pipeline, mapping rules, invariants, and failure behavior.
 - `FRONTEND.md`: frontend structure, state transitions, error/retry flows, and performance guardrails.
-- `TESTING_AND_CI.md`: test matrix, local commands, CI expectations, and quality checklist.
+- `TESTING_AND_CI.md`: uv-based Python checks, test matrix, local commands, CI expectations, and quality checklist.
 - `DEPLOYMENT.md`: GitHub Pages setup requirements, deploy workflow behavior, local deployment options, and troubleshooting.
 - `CVDP_BENCHMARK_INTERNALS.md`: detailed `cvdp_benchmark` submodule internals and execution pipeline.
