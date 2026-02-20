@@ -42,6 +42,8 @@ The frontend is a static React application for browsing normalized CVDP records 
 ## 4.2 Navigation state
 
 - selected ID is reflected in URL query params
+- filter/search state is reflected in URL query params:
+  - `q`, `mode`, `difficulty`, `dataset`, `category`
 - browser back/forward is supported with `popstate` handling
 - if filters remove the currently selected ID, selection automatically moves to the first visible result
 
@@ -117,6 +119,8 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - large-file performance notice rendering
 - category filter + selected record synchronization behavior
 - virtualization behavior for long record lists
+- URL-query hydration for selected ID + filters
+- URL-query updates for debounced search and filters
 
 Run:
 

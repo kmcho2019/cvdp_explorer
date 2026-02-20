@@ -68,6 +68,7 @@ Frontend tests currently validate:
 - large-file performance notice rendering
 - category filtering with selected-record synchronization
 - sidebar virtualization behavior for large record sets
+- URL-state hydration and URL-query synchronization behavior
 
 ## 4. CI Workflows
 
