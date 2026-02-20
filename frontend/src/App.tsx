@@ -6,7 +6,7 @@ import Prism from 'prismjs'
 import { filterIndexRecords, isMarkdownLikeFile, mapPrismLanguage, type IndexItem } from './lib/explorer'
 import { useDebouncedValue } from './lib/useDebouncedValue'
 import { getBadgeClassName, type BadgeKind } from './lib/badges'
-import { highlightPromptCode, isInlineCodeNode } from './lib/promptMarkdown'
+import { highlightPromptCode, isInlineCodeNode, isMermaidCodeFence } from './lib/promptMarkdown'
 import { formatCategoryLabel } from './lib/categories'
 import { buildFilterHierarchy } from './lib/hierarchy'
 import {
@@ -67,6 +67,7 @@ type ModeFilter = 'all' | 'agentic' | 'nonagentic'
 type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard'
 type TaskTypeFilter = 'all' | 'code_generation' | 'code_comprehension'
 type MainPanelSection = 'records' | 'benchmark'
+type MarkdownRenderSurface = 'prompt' | 'file'
 
 type UrlState = {
   id: string
@@ -238,28 +239,40 @@ function MetadataBadge({
   )
 }
 
-const promptMarkdownComponents: Components = {
-  code(props) {
-    const { className, children } = props
-    const raw = String(children ?? '').replace(/\n$/, '')
+function buildPromptMarkdownComponents(surface: MarkdownRenderSurface): Components {
+  return {
+    code(props) {
+      const { className, children } = props
+      const raw = String(children ?? '').replace(/\n$/, '')
 
-    if (isInlineCodeNode(className, raw)) {
-      return <code className="prompt-inline-code">{children}</code>
-    }
+      if (isInlineCodeNode(className, raw)) {
+        return <code className="prompt-inline-code">{children}</code>
+      }
 
-    const { html, language } = highlightPromptCode(raw, className)
+      if (isMermaidCodeFence(className, raw)) {
+        return (
+          <MermaidDiagram
+            chart={raw}
+            title={surface === 'prompt' ? 'Prompt Mermaid diagram' : 'File Mermaid diagram'}
+            surface="markdown"
+          />
+        )
+      }
 
-    return (
-      <pre className={`markdown-code language-${language}`}>
-        <code className={`language-${language}`} dangerouslySetInnerHTML={{ __html: html }} />
-      </pre>
-    )
-  },
+      const { html, language } = highlightPromptCode(raw, className)
+
+      return (
+        <pre className={`markdown-code language-${language}`}>
+          <code className={`language-${language}`} dangerouslySetInnerHTML={{ __html: html }} />
+        </pre>
+      )
+    },
+  }
 }
 
-function PromptMarkdown({ content }: { content: string }): JSX.Element {
+function PromptMarkdown({ content, surface = 'prompt' }: { content: string; surface?: MarkdownRenderSurface }): JSX.Element {
   return (
-    <Markdown remarkPlugins={[remarkGfm]} components={promptMarkdownComponents}>
+    <Markdown remarkPlugins={[remarkGfm]} components={buildPromptMarkdownComponents(surface)}>
       {content}
     </Markdown>
   )
@@ -269,14 +282,14 @@ function FileViewerContent({ file }: { file: FileEntry }): JSX.Element {
   if (isMarkdownLikeFile(file.path, file.language)) {
     return (
       <div className="markdown-file-view">
-        <PromptMarkdown content={file.content} />
+        <PromptMarkdown content={file.content} surface="file" />
       </div>
     )
   }
   return <CodeBlock file={file} />
 }
 
-function MermaidDiagram({ chart, title }: { chart: string; title: string }): JSX.Element {
+function MermaidDiagram({ chart, title, surface = 'guide' }: { chart: string; title: string; surface?: 'guide' | 'markdown' }): JSX.Element {
   const diagramIdRef = useRef<string>('')
   if (diagramIdRef.current === '') {
     diagramIdRef.current = nextMermaidDiagramId()
@@ -338,20 +351,24 @@ function MermaidDiagram({ chart, title }: { chart: string; title: string }): JSX
   }, [chart])
 
   return (
-    <figure className="guide-diagram">
+    <figure className={surface === 'guide' ? 'guide-diagram' : 'guide-diagram markdown-mermaid-diagram'} data-diagram-surface={surface}>
       <figcaption>{title}</figcaption>
       {renderState === 'ready' && svg !== '' ? (
-        <div className="guide-mermaid" dangerouslySetInnerHTML={{ __html: svg }} />
+        <div className={surface === 'guide' ? 'guide-mermaid' : 'guide-mermaid markdown-mermaid'} dangerouslySetInnerHTML={{ __html: svg }} />
       ) : renderState === 'loading' ? (
         <div className="guide-diagram-loading" role="status" aria-label="Rendering diagram">
           Rendering diagram...
         </div>
       ) : (
-        <pre className="guide-diagram-fallback">
+        <pre className={surface === 'guide' ? 'guide-diagram-fallback' : 'guide-diagram-fallback markdown-mermaid-fallback'}>
           <code>{chart}</code>
         </pre>
       )}
-      {renderState === 'failed' ? <p className="guide-diagram-note">Diagram renderer unavailable; showing Mermaid source fallback.</p> : null}
+      {renderState === 'failed' ? (
+        <p className={surface === 'guide' ? 'guide-diagram-note' : 'guide-diagram-note markdown-mermaid-note'}>
+          Diagram renderer unavailable; showing Mermaid source fallback.
+        </p>
+      ) : null}
     </figure>
   )
 }

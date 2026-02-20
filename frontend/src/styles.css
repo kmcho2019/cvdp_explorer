@@ -529,6 +529,34 @@ body {
   margin: 0 auto;
 }
 
+.markdown-mermaid-diagram {
+  margin: 0.5rem 0;
+  border-color: #dbe5f0;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.markdown-mermaid-diagram figcaption {
+  color: #334155;
+}
+
+.markdown-mermaid {
+  border-color: #dbe5f0;
+  background: #ffffff;
+}
+
+.markdown-mermaid svg {
+  min-width: 320px;
+}
+
+.markdown-mermaid-fallback {
+  border-color: #dbe5f0;
+  background: #f8fafc;
+}
+
+.markdown-mermaid-note {
+  color: #64748b;
+}
+
 .guide-diagram-loading {
   border: 1px dashed #93c5fd;
   border-radius: 8px;
@@ -850,5 +878,9 @@ body {
 
   .guide-mermaid svg {
     min-width: 460px;
+  }
+
+  .markdown-mermaid svg {
+    min-width: 280px;
   }
 }

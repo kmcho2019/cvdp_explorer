@@ -3,6 +3,8 @@ import { mapPrismLanguage } from './explorer'
 
 const LANGUAGE_CLASS_RE = /language-([A-Za-z0-9_+-]+)/i
 const TEXT_LANGUAGE_ALIASES = new Set(['text', 'plain', 'plaintext', 'txt', 'none'])
+const MERMAID_DIAGRAM_START_RE =
+  /^\s*(?:graph\s+(?:LR|RL|TB|TD|BT)|flowchart\s+(?:LR|RL|TB|TD|BT)|stateDiagram(?:-v2)?|sequenceDiagram|classDiagram|erDiagram|gantt|journey|gitGraph|mindmap|timeline|pie\b|quadrantChart)\b/i
 
 function inferLanguageFromContent(content: string): string {
   const normalized = content.trim().toLowerCase()
@@ -36,19 +38,36 @@ function normalizeLanguageToken(language: string): string {
   return language
 }
 
+export function getCodeFenceLanguage(className: string | undefined): string | undefined {
+  const languageToken = className?.match(LANGUAGE_CLASS_RE)?.[1]?.toLowerCase()
+  return languageToken ? normalizeLanguageToken(languageToken) : undefined
+}
+
 export function escapeHtml(content: string): string {
   return content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 export function inferPromptCodeLanguage(className: string | undefined, content: string): string {
-  const languageToken = className?.match(LANGUAGE_CLASS_RE)?.[1]?.toLowerCase()
-  const normalizedLanguage = languageToken ? normalizeLanguageToken(languageToken) : undefined
+  const normalizedLanguage = getCodeFenceLanguage(className)
 
   if (normalizedLanguage && !TEXT_LANGUAGE_ALIASES.has(normalizedLanguage)) {
     return mapPrismLanguage(normalizedLanguage)
   }
 
   return inferLanguageFromContent(content)
+}
+
+export function isMermaidCodeFence(className: string | undefined, content: string): boolean {
+  const normalizedLanguage = getCodeFenceLanguage(className)
+  if (normalizedLanguage === 'mermaid') {
+    return true
+  }
+
+  if (normalizedLanguage && !TEXT_LANGUAGE_ALIASES.has(normalizedLanguage)) {
+    return false
+  }
+
+  return MERMAID_DIAGRAM_START_RE.test(content.trim())
 }
 
 export function highlightPromptCode(content: string, className?: string): { html: string; language: string } {

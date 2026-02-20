@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { inferPromptCodeLanguage, isInlineCodeNode } from './promptMarkdown'
+import { inferPromptCodeLanguage, isInlineCodeNode, isMermaidCodeFence } from './promptMarkdown'
 
 describe('inferPromptCodeLanguage', () => {
   it('respects explicit language classes', () => {
@@ -27,5 +27,21 @@ describe('isInlineCodeNode', () => {
     expect(isInlineCodeNode(undefined, 'signal_name')).toBe(true)
     expect(isInlineCodeNode(undefined, 'line1\nline2')).toBe(false)
     expect(isInlineCodeNode('language-text', 'signal_name')).toBe(false)
+  })
+})
+
+describe('isMermaidCodeFence', () => {
+  it('detects explicit mermaid language fences', () => {
+    expect(isMermaidCodeFence('language-mermaid', 'graph LR;\nA --> B')).toBe(true)
+  })
+
+  it('detects mermaid syntax in unlabeled or text fences', () => {
+    expect(isMermaidCodeFence(undefined, 'graph LR;\nA --> B')).toBe(true)
+    expect(isMermaidCodeFence('language-text', 'stateDiagram-v2\n[*] --> Idle')).toBe(true)
+  })
+
+  it('does not classify non-mermaid code as mermaid', () => {
+    expect(isMermaidCodeFence('language-systemverilog', 'module demo; endmodule')).toBe(false)
+    expect(isMermaidCodeFence('language-text', 'module demo; endmodule')).toBe(false)
   })
 })

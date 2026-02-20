@@ -240,6 +240,11 @@ describe('App', () => {
       '  logic sig;',
       'endmodule',
       '```',
+      '',
+      '```mermaid',
+      'graph LR;',
+      '  Req --> Resp',
+      '```',
     ].join('\n')
 
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
@@ -277,6 +282,11 @@ describe('App', () => {
     const inferredVerilogBlock = document.querySelector('.markdown-code.language-verilog')
     expect(inferredVerilogBlock).toBeTruthy()
     expect(inferredVerilogBlock).toHaveTextContent('module partial_demo;')
+
+    const renderedMermaid = document.querySelector('.guide-diagram[data-diagram-surface="markdown"]')
+    expect(renderedMermaid).toBeTruthy()
+    expect(renderedMermaid).toHaveTextContent('Prompt Mermaid diagram')
+    expect(document.querySelector('.markdown-code.language-mermaid')).toBeNull()
   })
 
   it('renders markdown context files as formatted markdown in the file viewer', async () => {
@@ -289,6 +299,11 @@ describe('App', () => {
       '```systemverilog',
       'module context_demo;',
       'endmodule',
+      '```',
+      '',
+      '```mermaid',
+      'graph LR;',
+      '  Input --> Output',
       '```',
     ].join('\n')
 
@@ -319,6 +334,11 @@ describe('App', () => {
     const renderedMarkdownBlock = document.querySelector('.markdown-file-view .markdown-code.language-verilog')
     expect(renderedMarkdownBlock).toBeTruthy()
     expect(renderedMarkdownBlock).toHaveTextContent('module context_demo;')
+
+    const renderedMarkdownMermaid = document.querySelector('.markdown-file-view .guide-diagram[data-diagram-surface="markdown"]')
+    expect(renderedMarkdownMermaid).toBeTruthy()
+    expect(renderedMarkdownMermaid).toHaveTextContent('File Mermaid diagram')
+    expect(document.querySelector('.markdown-file-view .markdown-code.language-mermaid')).toBeNull()
   })
 
   it('shows category labels with short descriptions in filter options and metadata', async () => {
