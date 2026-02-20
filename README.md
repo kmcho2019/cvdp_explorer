@@ -1,113 +1,74 @@
-
-
 # CVDP Benchmark Explorer
 
+Static explorer for the NVIDIA CVDP benchmark dataset.
 
+This repository converts raw benchmark JSONL files into a frontend-friendly format and serves an interactive React UI for browsing prompts, context files, harness files, and redacted reference outputs.
 
-A lightweight, static web application and data pipeline designed to visually explore the [NVIDIA Chip Verification and Design Prompts (CVDP)](https://huggingface.co/datasets/nvidia/cvdp-benchmark-dataset) dataset. ## Motivation
+## Quick Start
 
-Evaluating Large Language Models for Electronic Design Automation (EDA) and RTL generation involves dense, multi-turn prompts, complex context windows, and intricate Verilog/SystemVerilog test harnesses. The upstream CVDP dataset distributes this data as raw JSONL files. While efficient for programmatic evaluation, reading nested hardware descriptions and conversational prompts directly from JSONL makes qualitative analysis and debugging tedious. 
+## 1. Ensure submodules are initialized
 
+```bash
+git submodule update --init --recursive
+```
 
+## 2. Build normalized dataset artifacts
 
-This repository provides a processed data pipeline and a React-based frontend to render these benchmarks into a readable, easily navigable web interface with full syntax highlighting.
+```bash
+python -m pip install -r data/scripts/requirements.txt
+python data/scripts/process_cvdp.py
+```
 
-## Repository Architecture
+This generates:
 
+- `frontend/public/data/index.json`
+- `frontend/public/data/stats.json`
+- `frontend/public/data/records/*.json`
 
+## 3. Run frontend locally
 
-The project is divided into three main components: a Python data processing pipeline, a React/Vite frontend, and a containerized development environment.```text
-
-cvdp-explorer/
-
-├── .devcontainer/        # Docker and VS Code configuration for a reproducible dev environment
-
-├── .github/workflows/    # CI/CD pipelines for automated GitHub Pages deployment
-
-├── cvdp_benchmark/       # Git submodule tracking the official NVlabs evaluation harness
-
-├── data/                 
-
-│   ├── raw/              # Destination for downloaded Hugging Face .jsonl files
-
-│   └── scripts/          # Python 3.12 scripts to parse and format the dataset
-
-├── frontend/             # Vite/React web application
-
-│   └── public/           # Destination for the processed JSON output
-
-└── reference/            # Academic context, including the original CVDP paper
-
-Prerequisites
-
-The easiest way to work on this project is using VS Code Devcontainers. The provided .devcontainer configuration automatically provisions a Linux environment equipped with:
-
-Python 3.12 (with formatting tools like Black)
-
-Node.js v20 (with Vite, ESLint, Prettier)
-
-Essential CLI tools: git, vim, tmux, htop, jq
-
-VS Code extensions for Python, React, and Verilog HDL syntax highlighting.
-
-Quickstart
-
-Clone the repository (including the submodule):
-
-Bash
-
-
-
-git clone --recursive [https://github.com/kmcho2019/cvdp-explorer.git](https://github.com/kmcho2019/cvdp-explorer.git)cd cvdp-explorer
-
-(If you already cloned it without the submodule, run git submodule update --init --recursive)
-
-Launch the Devcontainer:
-
-Open the project folder in VS Code.
-
-Press Ctrl+Shift+P (or Cmd+Shift+P on macOS) and select Dev Containers: Reopen in Container.
-
-The automated setup script will install both Python and Node.js dependencies upon creation.
-
-Fetch the Dataset:
-
-Download the cvdp_v1.0.2_agentic_code_generation.jsonl and cvdp_v1.0.2_nonagentic_code_generation.jsonl files from Hugging Face and place them in the data/raw/ directory.
-
-Process the Data:
-
-Convert the raw JSONL into frontend-friendly JSON.
-
-Bash
-
-
-
-cd data/scripts
-
-python process_cvdp.py
-
-Run the Web Explorer Locally:
-
-Start the Vite development server to view the UI.
-
-Bash
-
-
-
-cd ../../frontend
-
+```bash
+cd frontend
+npm install
 npm run dev
+```
 
-Navigate to http://localhost:5173 in your browser.
+## Testing
 
-Deployment
+Python pipeline tests:
 
-This project is configured to deploy automatically to GitHub Pages via GitHub Actions. Any push to the main branch will trigger the .github/workflows/deploy.yml pipeline, which builds the Vite project and deploys the dist/ directory.
+```bash
+python -m pytest -q data/scripts/tests
+```
 
-Acknowledgements
+Frontend tests:
 
-Dataset and Benchmark: NVlabs/cvdp_benchmark
+```bash
+cd frontend
+npm test
+```
 
-Paper: Comprehensive Verilog Design Problems: A Next-Generation Benchmark Dataset for Evaluating Large Language Models and Agents on RTL Design and Verification
+Frontend build verification:
 
+```bash
+cd frontend
+npm run build
+```
 
+## Documentation
+
+- `SPECIFICATION_AND_DEVELOPMENT_PLAN.md`: implementation blueprint.
+- `docs/ARCHITECTURE.md`: system design and repository layout.
+- `docs/CVDP_BENCHMARK_INTERNALS.md`: deep dive into `cvdp_benchmark` data model and processing pipeline internals.
+- `docs/DATA_PIPELINE.md`: normalization and output contract.
+- `docs/FRONTEND.md`: UI behavior and rendering model.
+- `docs/TESTING_AND_CI.md`: testing commands and CI flow.
+
+## CI/CD
+
+- `/.github/workflows/ci.yml`: PR and main-branch validation (tests + build).
+- `/.github/workflows/deploy.yml`: GitHub Pages deployment.
+
+## Notes on Redacted Outputs
+
+Public CVDP datasets in this repo include many tasks where expected solution files are intentionally empty. The pipeline preserves these fields and labels them as redacted so the UI can communicate this explicitly.

@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node / Vite
+frontend/node_modules/
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
+
+# Processed dataset artifacts
+frontend/public/data/
+
+# OS/editor
+.DS_Store
+.vscode/
