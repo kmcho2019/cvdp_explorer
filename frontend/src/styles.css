@@ -671,6 +671,50 @@ body {
   margin: 0.35rem 0;
 }
 
+.prompt-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.prompt-header h3 {
+  margin: 0;
+}
+
+.prompt-view-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.prompt-view-button {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
+
+.prompt-view-button:hover {
+  background: #eef2ff;
+}
+
+.prompt-view-button.active {
+  border-color: #2563eb;
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+.prompt-view-note {
+  margin: 0.45rem 0 0.2rem;
+  color: #475569;
+  font-size: 0.8rem;
+}
+
 .prompt-inline-code {
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.85em;
@@ -678,6 +722,22 @@ body {
   color: #0f172a;
   border-radius: 6px;
   padding: 0.08rem 0.32rem;
+}
+
+.prompt-raw-text {
+  margin: 0.45rem 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #0f172a;
+  padding: 0.75rem;
+  overflow: auto;
+}
+
+.prompt-raw-text code {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.79rem;
+  line-height: 1.45;
 }
 
 .markdown-code {

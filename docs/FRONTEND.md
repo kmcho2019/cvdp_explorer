@@ -87,10 +87,12 @@ Implemented explicit states for both index and record fetches:
 Prompt rendering:
 
 - system/user prompt blocks use markdown rendering (`react-markdown` + GFM)
+- prompt panel includes a view-mode toggle: `Rendered` (default) or `Raw Markdown`
 - fenced prompt code blocks are rendered with Prism highlighting in markdown cards
 - fenced Mermaid blocks (and unlabeled/text fences with Mermaid graph syntax) are rendered as Mermaid diagrams instead of raw source text
 - when markdown uses generic `text` fences, the renderer infers a likely language from snippet content (for example: RTL keywords -> Verilog, assignment-list snippets -> Python-like highlighting)
 - inline markdown code spans use a dedicated high-contrast style for readability
+- raw prompt mode shows exact prompt markdown text with no markdown rendering and no syntax highlighting (useful for inspecting what the model receives verbatim)
 
 File rendering:
 
@@ -210,6 +212,7 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - URL-query updates for debounced search and filters (including task type)
 - semantic badge classes for key metadata tags
 - prompt markdown code-fence rendering with inferred syntax-language classes and Mermaid rendering path
+- prompt raw-mode toggle behavior (rendered/raw) with markdown/highlighting disable guarantees in raw mode
 - markdown context-file rendering in file viewer (heading/list/code-fence/Mermaid behavior)
 - category label rendering with short descriptions in filter/metadata views
 

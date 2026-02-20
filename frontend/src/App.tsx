@@ -67,6 +67,7 @@ type ModeFilter = 'all' | 'agentic' | 'nonagentic'
 type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard'
 type TaskTypeFilter = 'all' | 'code_generation' | 'code_comprehension'
 type MainPanelSection = 'records' | 'benchmark'
+type PromptViewMode = 'rendered' | 'raw'
 type MarkdownRenderSurface = 'prompt' | 'file'
 
 type UrlState = {
@@ -276,6 +277,18 @@ function PromptMarkdown({ content, surface = 'prompt' }: { content: string; surf
       {content}
     </Markdown>
   )
+}
+
+function PromptContent({ content, mode }: { content: string; mode: PromptViewMode }): JSX.Element {
+  if (mode === 'raw') {
+    return (
+      <pre className="prompt-raw-text">
+        <code>{content}</code>
+      </pre>
+    )
+  }
+
+  return <PromptMarkdown content={content} />
 }
 
 function FileViewerContent({ file }: { file: FileEntry }): JSX.Element {
@@ -561,6 +574,7 @@ function App(): JSX.Element {
   const [selection, setSelection] = useState<FileSelection | null>(null)
 
   const [mainSection, setMainSection] = useState<MainPanelSection>('records')
+  const [promptViewMode, setPromptViewMode] = useState<PromptViewMode>('rendered')
   const [search, setSearch] = useState(initialUrlState.search)
   const [taskTypeFilter, setTaskTypeFilter] = useState<TaskTypeFilter>(initialUrlState.taskTypeFilter)
   const [modeFilter, setModeFilter] = useState<ModeFilter>(initialUrlState.modeFilter)
@@ -1221,16 +1235,39 @@ function App(): JSX.Element {
                 </section>
 
                 <section className="card">
-                  <h3>Prompt</h3>
+                  <div className="prompt-header">
+                    <h3>Prompt</h3>
+                    <div className="prompt-view-switch" role="group" aria-label="Prompt view mode">
+                      <button
+                        type="button"
+                        className={promptViewMode === 'rendered' ? 'prompt-view-button active' : 'prompt-view-button'}
+                        aria-pressed={promptViewMode === 'rendered'}
+                        onClick={() => setPromptViewMode('rendered')}
+                      >
+                        Rendered
+                      </button>
+                      <button
+                        type="button"
+                        className={promptViewMode === 'raw' ? 'prompt-view-button active' : 'prompt-view-button'}
+                        aria-pressed={promptViewMode === 'raw'}
+                        onClick={() => setPromptViewMode('raw')}
+                      >
+                        Raw Markdown
+                      </button>
+                    </div>
+                  </div>
+                  {promptViewMode === 'raw' ? (
+                    <p className="prompt-view-note">Raw mode disables markdown rendering and syntax highlighting for prompt text.</p>
+                  ) : null}
                   {selectedRecord.prompt.system.trim() !== '' ? (
                     <div className="prompt-block">
                       <h4>System Message</h4>
-                      <PromptMarkdown content={selectedRecord.prompt.system} />
+                      <PromptContent content={selectedRecord.prompt.system} mode={promptViewMode} />
                     </div>
                   ) : null}
                   <div className="prompt-block">
                     <h4>User Prompt</h4>
-                    <PromptMarkdown content={selectedRecord.prompt.user} />
+                    <PromptContent content={selectedRecord.prompt.user} mode={promptViewMode} />
                   </div>
                 </section>
 

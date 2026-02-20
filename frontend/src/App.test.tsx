@@ -341,6 +341,61 @@ describe('App', () => {
     expect(document.querySelector('.markdown-file-view .markdown-code.language-mermaid')).toBeNull()
   })
 
+  it('supports raw prompt mode with markdown rendering and highlighting disabled', async () => {
+    const rawUserPrompt = [
+      '# Raw Prompt Header',
+      '',
+      '```systemverilog',
+      'module raw_demo;',
+      'endmodule',
+      '```',
+      '',
+      '- item one',
+    ].join('\n')
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(
+          makeRecordPayload({
+            prompt: {
+              system: 'System **markdown** with `inline` code',
+              user: rawUserPrompt,
+            },
+          }),
+        ) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByRole('heading', { level: 2, name: 'demo case' })
+    expect(screen.getByRole('heading', { name: 'Raw Prompt Header' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Raw Markdown' }))
+
+    expect(screen.getByText('Raw mode disables markdown rendering and syntax highlighting for prompt text.')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Raw Prompt Header' })).toBeNull()
+
+    const rawPromptBlocks = document.querySelectorAll('.prompt-raw-text')
+    expect(rawPromptBlocks).toHaveLength(2)
+    const userRawBlock = Array.from(rawPromptBlocks).find((block) => block.textContent?.includes('module raw_demo;'))
+    expect(userRawBlock).toBeTruthy()
+    expect(userRawBlock).toHaveTextContent('# Raw Prompt Header')
+    expect(userRawBlock).toHaveTextContent('```systemverilog')
+
+    expect(document.querySelector('.prompt-block .markdown-code')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rendered' }))
+    expect(screen.getByRole('heading', { name: 'Raw Prompt Header' })).toBeInTheDocument()
+  })
+
   it('shows category labels with short descriptions in filter options and metadata', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
