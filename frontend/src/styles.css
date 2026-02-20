@@ -272,6 +272,39 @@ body {
   margin: 0.35rem 0;
 }
 
+.prompt-inline-code {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.85em;
+  background: #e2e8f0;
+  color: #0f172a;
+  border-radius: 6px;
+  padding: 0.08rem 0.32rem;
+}
+
+.markdown-code {
+  margin: 0.55rem 0;
+  border-radius: 10px;
+  border: 1px solid #0f172a;
+  background: #0f172a;
+  overflow: auto;
+  padding: 0.75rem;
+}
+
+.markdown-code code {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.79rem;
+  line-height: 1.45;
+}
+
+.markdown-code.language-none {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.markdown-code.language-none code {
+  color: #0f172a;
+}
+
 .file-layout {
   display: grid;
   grid-template-columns: minmax(200px, 320px) 1fr;

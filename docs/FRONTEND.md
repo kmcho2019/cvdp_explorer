@@ -34,6 +34,8 @@ The frontend is a static React application for browsing normalized CVDP records 
   - utility-level tests
 - `frontend/src/lib/badges.test.ts`
   - badge semantics regression coverage
+- `frontend/src/lib/promptMarkdown.test.ts`
+  - markdown code-language inference and inline/block classification coverage
 
 ## 4. Data Loading and State Model
 
@@ -71,6 +73,9 @@ Implemented explicit states for both index and record fetches:
 Prompt rendering:
 
 - system/user prompt blocks use markdown rendering (`react-markdown` + GFM)
+- fenced prompt code blocks are rendered with Prism highlighting in markdown cards
+- when markdown uses generic `text` fences, the renderer infers a likely language from snippet content (for example: RTL keywords -> Verilog, assignment-list snippets -> Python-like highlighting)
+- inline markdown code spans use a dedicated high-contrast style for readability
 
 File rendering:
 
@@ -121,6 +126,12 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - difficulty traffic-light mapping guarantees
 - fallback behavior for unexpected values
 
+`frontend/src/lib/promptMarkdown.test.ts` covers:
+
+- language-class passthrough for explicit fenced code languages
+- inference behavior for generic `text` fenced snippets
+- inline-vs-block markdown code classification logic
+
 `frontend/src/lib/useDebouncedValue.test.ts` covers:
 
 - debounce timing behavior
@@ -138,6 +149,7 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - URL-query hydration for selected ID + filters
 - URL-query updates for debounced search and filters
 - semantic badge classes for key metadata tags
+- prompt markdown code-fence rendering with inferred syntax-language classes
 
 Run:
 

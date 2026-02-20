@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
+import type { Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import Prism from 'prismjs'
 import { filterIndexRecords, mapPrismLanguage, type IndexItem } from './lib/explorer'
 import { useDebouncedValue } from './lib/useDebouncedValue'
 import { getBadgeClassName, type BadgeKind } from './lib/badges'
+import { highlightPromptCode, isInlineCodeNode } from './lib/promptMarkdown'
 
 type FileEntry = {
   path: string
@@ -159,6 +161,33 @@ function CodeBlock({ file }: { file: FileEntry }): JSX.Element {
 
 function MetadataBadge({ kind, value }: { kind: BadgeKind; value: string }): JSX.Element {
   return <span className={getBadgeClassName(kind, value)}>{value}</span>
+}
+
+const promptMarkdownComponents: Components = {
+  code(props) {
+    const { className, children } = props
+    const raw = String(children ?? '').replace(/\n$/, '')
+
+    if (isInlineCodeNode(className, raw)) {
+      return <code className="prompt-inline-code">{children}</code>
+    }
+
+    const { html, language } = highlightPromptCode(raw, className)
+
+    return (
+      <pre className={`markdown-code language-${language}`}>
+        <code className={`language-${language}`} dangerouslySetInnerHTML={{ __html: html }} />
+      </pre>
+    )
+  },
+}
+
+function PromptMarkdown({ content }: { content: string }): JSX.Element {
+  return (
+    <Markdown remarkPlugins={[remarkGfm]} components={promptMarkdownComponents}>
+      {content}
+    </Markdown>
+  )
 }
 
 function App(): JSX.Element {
@@ -625,12 +654,12 @@ function App(): JSX.Element {
               {selectedRecord.prompt.system.trim() !== '' ? (
                 <div className="prompt-block">
                   <h4>System Message</h4>
-                  <Markdown remarkPlugins={[remarkGfm]}>{selectedRecord.prompt.system}</Markdown>
+                  <PromptMarkdown content={selectedRecord.prompt.system} />
                 </div>
               ) : null}
               <div className="prompt-block">
                 <h4>User Prompt</h4>
-                <Markdown remarkPlugins={[remarkGfm]}>{selectedRecord.prompt.user}</Markdown>
+                <PromptMarkdown content={selectedRecord.prompt.user} />
               </div>
             </section>
 
@@ -694,7 +723,7 @@ function App(): JSX.Element {
               {selectedRecord.expected_outputs.response_redacted ? (
                 <div className="redaction">Reference response is redacted in this dataset release.</div>
               ) : (
-                <Markdown remarkPlugins={[remarkGfm]}>{selectedRecord.expected_outputs.response_text}</Markdown>
+                <PromptMarkdown content={selectedRecord.expected_outputs.response_text} />
               )}
             </section>
           </>

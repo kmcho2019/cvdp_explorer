@@ -181,6 +181,58 @@ describe('App', () => {
     expect(categoryBadge).toBeTruthy()
   })
 
+  it('renders prompt markdown code fences with inferred syntax-language classes', async () => {
+    const promptWithTextCode = [
+      'Use inline `qam16_demapper_interpolated` naming.',
+      '',
+      '```text',
+      'I = [Mapped 1, Interpolated 1, Mapped 2, Mapped 3, Interpolated 2, Mapped 4]',
+      '```',
+      '',
+      '```text',
+      'module partial_demo;',
+      '  logic sig;',
+      'endmodule',
+      '```',
+    ].join('\n')
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(
+          makeRecordPayload({
+            prompt: {
+              system: '',
+              user: promptWithTextCode,
+            },
+          }),
+        ) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByRole('heading', { level: 2, name: 'demo case' })
+
+    const inlineCode = document.querySelector('.prompt-inline-code')
+    expect(inlineCode).toBeTruthy()
+    expect(inlineCode).toHaveTextContent('qam16_demapper_interpolated')
+
+    const inferredPythonBlock = document.querySelector('.markdown-code.language-python')
+    expect(inferredPythonBlock).toBeTruthy()
+    expect(inferredPythonBlock).toHaveTextContent('I = [Mapped 1, Interpolated 1, Mapped 2')
+
+    const inferredVerilogBlock = document.querySelector('.markdown-code.language-verilog')
+    expect(inferredVerilogBlock).toBeTruthy()
+    expect(inferredVerilogBlock).toHaveTextContent('module partial_demo;')
+  })
+
   it('renders index error state and supports retry', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
 
