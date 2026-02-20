@@ -26,6 +26,8 @@ The frontend is a static React application for browsing normalized CVDP records 
   - filter and Prism-language helper utilities
 - `frontend/src/lib/badges.ts`
   - semantic badge tone and class mapping for metadata tags
+- `frontend/src/lib/categories.ts`
+  - category-ID label/description mapping for more interpretable category UI text
 - `frontend/src/styles.css`
   - layout, visual design, and state styling
 - `frontend/src/App.test.tsx`
@@ -36,6 +38,8 @@ The frontend is a static React application for browsing normalized CVDP records 
   - badge semantics regression coverage
 - `frontend/src/lib/promptMarkdown.test.ts`
   - markdown code-language inference and inline/block classification coverage
+- `frontend/src/lib/categories.test.ts`
+  - category-description mapping regression coverage
 
 ## 4. Data Loading and State Model
 
@@ -88,6 +92,7 @@ Metadata badge rendering:
 - badges use semantic color families instead of one neutral style
 - difficulty follows traffic-light coloring (`easy` green, `medium` amber, `hard` red)
 - mode, category, dataset, commercial-status, record IDs, and source-file labels each have distinct badge tones for faster visual scanning
+- category IDs use short explanatory labels in filter options and record metadata (for example `cid002 (Code generation, threshold scoring)`)
 
 ## 6. Syntax Highlighting and Performance Guardrail
 
@@ -132,6 +137,12 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - inference behavior for generic `text` fenced snippets
 - inline-vs-block markdown code classification logic
 
+`frontend/src/lib/categories.test.ts` covers:
+
+- category ID to short-description mapping
+- scoring/mode grouping labels used in UI category text
+- fallback handling for unknown category formats
+
 `frontend/src/lib/useDebouncedValue.test.ts` covers:
 
 - debounce timing behavior
@@ -150,6 +161,7 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - URL-query updates for debounced search and filters
 - semantic badge classes for key metadata tags
 - prompt markdown code-fence rendering with inferred syntax-language classes
+- category label rendering with short descriptions in filter/metadata views
 
 Run:
 

@@ -7,6 +7,7 @@ import { filterIndexRecords, mapPrismLanguage, type IndexItem } from './lib/expl
 import { useDebouncedValue } from './lib/useDebouncedValue'
 import { getBadgeClassName, type BadgeKind } from './lib/badges'
 import { highlightPromptCode, isInlineCodeNode } from './lib/promptMarkdown'
+import { formatCategoryLabel } from './lib/categories'
 
 type FileEntry = {
   path: string
@@ -159,8 +160,22 @@ function CodeBlock({ file }: { file: FileEntry }): JSX.Element {
   )
 }
 
-function MetadataBadge({ kind, value }: { kind: BadgeKind; value: string }): JSX.Element {
-  return <span className={getBadgeClassName(kind, value)}>{value}</span>
+function MetadataBadge({
+  kind,
+  value,
+  displayValue,
+  title,
+}: {
+  kind: BadgeKind
+  value: string
+  displayValue?: string
+  title?: string
+}): JSX.Element {
+  return (
+    <span className={getBadgeClassName(kind, value)} title={title}>
+      {displayValue ?? value}
+    </span>
+  )
 }
 
 const promptMarkdownComponents: Components = {
@@ -545,7 +560,7 @@ function App(): JSX.Element {
           >
             {categories.map((category) => (
               <option key={category} value={category}>
-                {category}
+                {category === 'all' ? 'all categories' : formatCategoryLabel(category)}
               </option>
             ))}
           </select>
@@ -586,7 +601,7 @@ function App(): JSX.Element {
                     <div className="record-badges">
                       <MetadataBadge kind="mode" value={item.mode} />
                       <MetadataBadge kind="difficulty" value={item.difficulty} />
-                      <MetadataBadge kind="category" value={item.category} />
+                      <MetadataBadge kind="category" value={item.category} title={formatCategoryLabel(item.category)} />
                     </div>
                   </button>
                 </li>
@@ -642,7 +657,11 @@ function App(): JSX.Element {
                 <MetadataBadge kind="mode" value={selectedRecord.meta.mode} />
                 <MetadataBadge kind="taskType" value={selectedRecord.meta.task_type} />
                 <MetadataBadge kind="difficulty" value={selectedRecord.meta.difficulty} />
-                <MetadataBadge kind="category" value={selectedRecord.meta.category} />
+                <MetadataBadge
+                  kind="category"
+                  value={selectedRecord.meta.category}
+                  displayValue={formatCategoryLabel(selectedRecord.meta.category)}
+                />
                 <MetadataBadge kind="dataset" value={selectedRecord.meta.dataset} />
                 <MetadataBadge kind="commercial" value={selectedRecord.meta.commercial ? 'commercial' : 'no-commercial'} />
                 <MetadataBadge kind="source" value={selectedRecord.raw.source_file} />

@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import App from './App'
 
@@ -231,6 +231,41 @@ describe('App', () => {
     const inferredVerilogBlock = document.querySelector('.markdown-code.language-verilog')
     expect(inferredVerilogBlock).toBeTruthy()
     expect(inferredVerilogBlock).toHaveTextContent('module partial_demo;')
+  })
+
+  it('shows category labels with short descriptions in filter options and metadata', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem({ category: 'cid002' })]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(
+          makeRecordPayload({
+            meta: { ...makeRecordPayload().meta, category: 'cid002' },
+          }),
+        ) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByRole('heading', { level: 2, name: 'demo case' })
+
+    const categorySelect = screen.getByLabelText('Filter by category')
+    expect(
+      within(categorySelect).getByRole('option', {
+        name: 'cid002 (Code generation, threshold scoring)',
+      }),
+    ).toBeInTheDocument()
+
+    const labeledCategoryBadge = screen
+      .getAllByText('cid002 (Code generation, threshold scoring)')
+      .find((element) => element.classList.contains('badge--category'))
+    expect(labeledCategoryBadge).toBeTruthy()
   })
 
   it('renders index error state and supports retry', async () => {
