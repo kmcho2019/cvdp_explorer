@@ -90,14 +90,24 @@ body {
   overflow-y: auto;
 }
 
+.record-row {
+  height: 118px;
+  padding-bottom: 0.5rem;
+}
+
+.record-spacer {
+  list-style: none;
+}
+
 .record-item {
   width: 100%;
+  height: 100%;
   text-align: left;
   border: 1px solid #dbe5f0;
   border-radius: 10px;
   background: white;
   padding: 0.6rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
   cursor: pointer;
 }
 
@@ -109,6 +119,10 @@ body {
 .record-title {
   font-weight: 600;
   margin-bottom: 0.2rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .record-meta {
@@ -119,9 +133,10 @@ body {
 
 .record-badges {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.35rem;
   margin-top: 0.4rem;
+  overflow: hidden;
 }
 
 .record-badges span,
@@ -130,6 +145,7 @@ body {
   border-radius: 999px;
   font-size: 0.72rem;
   padding: 0.15rem 0.45rem;
+  white-space: nowrap;
 }
 
 .main-panel {

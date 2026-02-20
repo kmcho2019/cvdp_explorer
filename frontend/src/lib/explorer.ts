@@ -33,6 +33,7 @@ export type FilterOptions = {
   modeFilter: 'all' | 'agentic' | 'nonagentic'
   difficultyFilter: 'all' | 'easy' | 'medium' | 'hard'
   datasetFilter: string
+  categoryFilter?: string
 }
 
 export function filterIndexRecords(index: IndexItem[], options: FilterOptions): IndexItem[] {
@@ -41,6 +42,7 @@ export function filterIndexRecords(index: IndexItem[], options: FilterOptions): 
     if (options.modeFilter !== 'all' && item.mode !== options.modeFilter) return false
     if (options.difficultyFilter !== 'all' && item.difficulty !== options.difficultyFilter) return false
     if (options.datasetFilter !== 'all' && item.dataset !== options.datasetFilter) return false
+    if ((options.categoryFilter ?? 'all') !== 'all' && item.category !== options.categoryFilter) return false
     if (!term) return true
     return [item.id, item.title, item.category, item.dataset].some((value) => value.toLowerCase().includes(term))
   })

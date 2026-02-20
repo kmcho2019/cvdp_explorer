@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import Prism from 'prismjs'
 import { filterIndexRecords, mapPrismLanguage, type IndexItem } from './lib/explorer'
+import { useDebouncedValue } from './lib/useDebouncedValue'
 
 type FileEntry = {
   path: string
@@ -46,6 +47,9 @@ type FileSelection = {
 }
 
 const LARGE_FILE_HIGHLIGHT_THRESHOLD = 120_000
+const SIDEBAR_ROW_HEIGHT = 118
+const SIDEBAR_OVERSCAN = 8
+const SEARCH_DEBOUNCE_MS = 120
 
 function getIdFromUrl(): string {
   return new URLSearchParams(window.location.search).get('id') ?? ''
@@ -94,10 +98,12 @@ function App(): JSX.Element {
   const [selectedId, setSelectedId] = useState<string>('')
   const [selectedRecord, setSelectedRecord] = useState<RecordDetail | null>(null)
   const [selection, setSelection] = useState<FileSelection | null>(null)
+
   const [search, setSearch] = useState('')
   const [modeFilter, setModeFilter] = useState<'all' | 'agentic' | 'nonagentic'>('all')
   const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'easy' | 'medium' | 'hard'>('all')
   const [datasetFilter, setDatasetFilter] = useState('all')
+  const [categoryFilter, setCategoryFilter] = useState('all')
 
   const [indexLoading, setIndexLoading] = useState(true)
   const [indexError, setIndexError] = useState<string | null>(null)
@@ -106,6 +112,12 @@ function App(): JSX.Element {
 
   const [indexReloadToken, setIndexReloadToken] = useState(0)
   const [recordReloadToken, setRecordReloadToken] = useState(0)
+
+  const recordListRef = useRef<HTMLUListElement | null>(null)
+  const [listScrollTop, setListScrollTop] = useState(0)
+  const [listHeight, setListHeight] = useState(420)
+
+  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -232,18 +244,73 @@ function App(): JSX.Element {
     return () => controller.abort()
   }, [selectedId, recordReloadToken])
 
+  useEffect(() => {
+    const updateListSize = (): void => {
+      if (recordListRef.current) {
+        setListHeight(recordListRef.current.clientHeight)
+      }
+    }
+
+    updateListSize()
+    window.addEventListener('resize', updateListSize)
+    return () => {
+      window.removeEventListener('resize', updateListSize)
+    }
+  }, [indexLoading, indexError])
+
+  useEffect(() => {
+    setListScrollTop(0)
+    if (recordListRef.current) {
+      recordListRef.current.scrollTop = 0
+    }
+  }, [debouncedSearch, modeFilter, difficultyFilter, datasetFilter, categoryFilter])
+
   const datasets = useMemo(() => {
     return ['all', ...Array.from(new Set(index.map((item) => item.dataset))).sort()]
   }, [index])
 
+  const categories = useMemo(() => {
+    return ['all', ...Array.from(new Set(index.map((item) => item.category))).sort()]
+  }, [index])
+
   const filtered = useMemo(() => {
     return filterIndexRecords(index, {
-      search,
+      search: debouncedSearch,
       modeFilter,
       difficultyFilter,
       datasetFilter,
+      categoryFilter,
     })
-  }, [index, search, modeFilter, difficultyFilter, datasetFilter])
+  }, [index, debouncedSearch, modeFilter, difficultyFilter, datasetFilter, categoryFilter])
+
+  useEffect(() => {
+    if (indexLoading || filtered.length === 0) {
+      return
+    }
+    if (!filtered.some((item) => item.id === selectedId)) {
+      setSelectedId(filtered[0].id)
+    }
+  }, [filtered, selectedId, indexLoading])
+
+  const virtualization = useMemo(() => {
+    if (filtered.length === 0) {
+      return {
+        visibleItems: filtered,
+        topSpacerHeight: 0,
+        bottomSpacerHeight: 0,
+      }
+    }
+
+    const startIndex = Math.max(0, Math.floor(listScrollTop / SIDEBAR_ROW_HEIGHT) - SIDEBAR_OVERSCAN)
+    const visibleCount = Math.ceil(listHeight / SIDEBAR_ROW_HEIGHT) + SIDEBAR_OVERSCAN * 2
+    const endIndex = Math.min(filtered.length, startIndex + visibleCount)
+
+    return {
+      visibleItems: filtered.slice(startIndex, endIndex),
+      topSpacerHeight: startIndex * SIDEBAR_ROW_HEIGHT,
+      bottomSpacerHeight: (filtered.length - endIndex) * SIDEBAR_ROW_HEIGHT,
+    }
+  }, [filtered, listScrollTop, listHeight])
 
   const selectedFile = useMemo(() => {
     if (!selectedRecord || !selection) return null
@@ -270,7 +337,7 @@ function App(): JSX.Element {
         <header className="sidebar-header">
           <h1>CVDP Explorer</h1>
           <p aria-live="polite">
-            {indexLoading ? 'Loading records...' : `${filtered.length} records`}
+            {indexLoading ? 'Loading records...' : `${filtered.length} of ${index.length} records`}
           </p>
         </header>
 
@@ -330,6 +397,22 @@ function App(): JSX.Element {
             <option value="medium">medium</option>
             <option value="hard">hard</option>
           </select>
+
+          <label className="filter-label" htmlFor="category-filter">
+            Category
+          </label>
+          <select
+            id="category-filter"
+            aria-label="Filter by category"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
         </div>
 
         {indexError ? (
@@ -342,27 +425,39 @@ function App(): JSX.Element {
           </div>
         ) : null}
 
-        <ul className="record-list">
-          {!indexLoading && filtered.length === 0 ? (
-            <li className="empty-message">No records match current filters.</li>
+        <ul
+          ref={recordListRef}
+          className="record-list"
+          onScroll={(event) => setListScrollTop(event.currentTarget.scrollTop)}
+        >
+          {!indexLoading && filtered.length === 0 ? <li className="empty-message">No records match current filters.</li> : null}
+          {filtered.length > 0 ? (
+            <>
+              {virtualization.topSpacerHeight > 0 ? (
+                <li className="record-spacer" aria-hidden style={{ height: `${virtualization.topSpacerHeight}px` }} />
+              ) : null}
+              {virtualization.visibleItems.map((item) => (
+                <li key={item.id} className="record-row">
+                  <button
+                    className={item.id === selectedId ? 'record-item active' : 'record-item'}
+                    onClick={() => setSelectedId(item.id)}
+                    aria-label={`Open ${item.id}`}
+                  >
+                    <div className="record-title">{item.title}</div>
+                    <div className="record-meta">{item.id}</div>
+                    <div className="record-badges">
+                      <span>{item.mode}</span>
+                      <span>{item.difficulty}</span>
+                      <span>{item.category}</span>
+                    </div>
+                  </button>
+                </li>
+              ))}
+              {virtualization.bottomSpacerHeight > 0 ? (
+                <li className="record-spacer" aria-hidden style={{ height: `${virtualization.bottomSpacerHeight}px` }} />
+              ) : null}
+            </>
           ) : null}
-          {filtered.map((item) => (
-            <li key={item.id}>
-              <button
-                className={item.id === selectedId ? 'record-item active' : 'record-item'}
-                onClick={() => setSelectedId(item.id)}
-                aria-label={`Open ${item.id}`}
-              >
-                <div className="record-title">{item.title}</div>
-                <div className="record-meta">{item.id}</div>
-                <div className="record-badges">
-                  <span>{item.mode}</span>
-                  <span>{item.difficulty}</span>
-                  <span>{item.category}</span>
-                </div>
-              </button>
-            </li>
-          ))}
         </ul>
       </aside>
 
