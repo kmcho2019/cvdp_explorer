@@ -1,0 +1,29 @@
+{
+  "name": "CVDP Explorer Environment",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter"
+        }
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "mshr-h.VerilogHDL",
+        "vscodevim.vim"
+      ]
+    }
+  },
+  "forwardPorts": [5173],
+  "postCreateCommand": "git submodule update --init --recursive && cd frontend && npm install && cd ../data/scripts && pip install -r requirements.txt black flake8",
+  "remoteUser": "vscode"
+}
