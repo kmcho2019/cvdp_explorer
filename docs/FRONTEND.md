@@ -1,37 +1,122 @@
 # Frontend Guide
 
-## Stack
+## 1. Purpose
+
+The frontend is a static React application for browsing normalized CVDP records with:
+
+- searchable/filterable record navigation
+- markdown prompt rendering
+- syntax-highlighted code/document viewing
+- explicit redaction and loading/error states
+
+## 2. Stack
 
 - React 18 + TypeScript
 - Vite 5
 - `react-markdown` + `remark-gfm`
-- `prismjs` syntax highlighting
+- `prismjs` for syntax highlighting
+- Vitest + Testing Library for UI and utility tests
 
-## Key Files
+## 3. Key Files
 
-- `frontend/src/App.tsx`: explorer UI and data-loading flow.
-- `frontend/src/lib/explorer.ts`: filter and language utility logic.
-- `frontend/src/styles.css`: base layout and responsive styles.
+- `frontend/src/App.tsx`
+  - primary explorer UI, loading flow, URL sync, and render logic
+- `frontend/src/lib/explorer.ts`
+  - filter and Prism-language helper utilities
+- `frontend/src/styles.css`
+  - layout, visual design, and state styling
+- `frontend/src/App.test.tsx`
+  - App-level UI behavior tests
+- `frontend/src/lib/explorer.test.ts`
+  - utility-level tests
 
-## Data Loading Model
+## 4. Data Loading and State Model
 
-1. Fetch `./data/index.json` at startup.
-2. Filter and search records in memory.
-3. Fetch `./data/records/<id>.json` when a record is selected.
-4. Persist current record in URL query param (`?id=...`) and handle browser back/forward (`popstate`).
-5. Use cancellation (`AbortController`) for in-flight index/record requests to prevent stale UI races.
+## 4.1 Startup
 
-## UX Sections
+1. Fetch `./data/index.json`.
+2. Resolve initial selected record ID from URL (`?id=`) or first record.
+3. Load `./data/records/<id>.json`.
 
-- Sidebar with search and filters.
-- Prompt section (system and user markdown).
-- File browser for context/harness/expected output files.
-- Code viewer with Prism highlighting.
-- Large-file fallback: very large files are initially rendered as plain text to avoid UI stalls, with an explicit “enable highlighting” action.
-- Explicit redaction notice for missing reference output.
-- Explicit loading, error, retry, and empty-state UI for index and record fetches.
+## 4.2 Navigation state
 
-## Run Locally
+- selected ID is reflected in URL query params
+- browser back/forward is supported with `popstate` handling
+
+## 4.3 Async safety
+
+- index and record fetches use `AbortController`
+- stale in-flight requests are cancelled on state changes
+
+## 4.4 UI states
+
+Implemented explicit states for both index and record fetches:
+
+- loading
+- error
+- retry
+- empty data
+- empty filtered results
+
+## 5. Rendering Model
+
+Prompt rendering:
+
+- system/user prompt blocks use markdown rendering (`react-markdown` + GFM)
+
+File rendering:
+
+- context, harness, and expected-output files shown in grouped navigation
+- selected file shown in code viewer with Prism highlighting
+- expected output redaction clearly labeled
+
+## 6. Syntax Highlighting and Performance Guardrail
+
+Prism language mapping is handled by `mapPrismLanguage`:
+
+- `systemverilog` -> `verilog`
+- `batch` -> `bash`
+- `text` -> `none`
+
+Performance guardrail:
+
+- large files above threshold are rendered as plain escaped text first
+- user can opt into syntax highlighting via explicit action
+
+This keeps the viewer responsive on very large files while still allowing deeper inspection.
+
+## 7. Accessibility and UX Notes
+
+- filter controls have explicit labels and ARIA names
+- record count uses `aria-live` for state updates
+- error states are rendered as visible alert sections with retry controls
+- empty sections show clear, non-ambiguous messages
+
+## 8. Testing Coverage
+
+`frontend/src/lib/explorer.test.ts` covers:
+
+- Prism language alias mapping
+- filter behavior by mode, difficulty, dataset, and combined criteria
+
+`frontend/src/App.test.tsx` covers:
+
+- successful index + record loading
+- index error and retry behavior
+- record error and retry behavior
+- filter empty-state rendering
+- large-file performance notice rendering
+
+Run:
+
+```bash
+cd frontend
+npm test
+```
+
+## 9. Local Development Commands
+
+Start dev server:
 
 ```bash
 cd frontend
@@ -39,7 +124,7 @@ npm install
 npm run dev
 ```
 
-## Build
+Build for production:
 
 ```bash
 cd frontend
