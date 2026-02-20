@@ -11,6 +11,7 @@ For first-time readers:
 - [`GUIDELINES.md`](GUIDELINES.md): contributor map (where to edit, validate, and document changes).
 - [`README.md`](README.md): top-level setup, run, testing, and deployment quick guide.
 - [`docs/README.md`](docs/README.md): documentation index for architecture, pipeline, frontend, CI, and deployment details.
+- Live GitHub Pages site: <https://kmcho2019.github.io/cvdp_explorer/>
 
 ## Quick Start
 
@@ -101,7 +102,7 @@ Project docs are consolidated under `docs/`.
 1. Ensure `Settings -> Pages -> Source` is set to `GitHub Actions`.
 2. Push to `main` (or run deploy workflow manually).
 3. Watch `Deploy CVDP Explorer` in GitHub Actions.
-4. Open the published URL shown by the deploy job.
+4. Open the published site: <https://kmcho2019.github.io/cvdp_explorer/>.
 
 Detailed steps and troubleshooting are in `docs/DEPLOYMENT.md`.
 

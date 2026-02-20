@@ -12,7 +12,7 @@ flowchart LR
   BUILD --> DIST[frontend/dist]
   DIST --> ARTIFACT[upload-pages-artifact]
   ARTIFACT --> PAGES[actions/deploy-pages]
-  PAGES --> URL[https://owner.github.io/repo/]
+  PAGES --> URL[https://kmcho2019.github.io/cvdp_explorer/]
 ```
 
 ## 2. GitHub Pages Deployment
@@ -51,6 +51,10 @@ flowchart LR
 2. Open the environment link from the `deploy` job output.
 3. Verify the site loads and records appear in the sidebar.
 4. In browser devtools network tab, confirm `data/index.json` returns HTTP 200.
+
+Live site URL for this repository:
+
+- <https://kmcho2019.github.io/cvdp_explorer/>
 
 ## 3. Local Deployment Options
 
