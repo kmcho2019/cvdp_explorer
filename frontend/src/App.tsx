@@ -46,19 +46,82 @@ type FileSelection = {
   path: string
 }
 
+type ModeFilter = 'all' | 'agentic' | 'nonagentic'
+type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard'
+
+type UrlState = {
+  id: string
+  search: string
+  modeFilter: ModeFilter
+  difficultyFilter: DifficultyFilter
+  datasetFilter: string
+  categoryFilter: string
+}
+
 const LARGE_FILE_HIGHLIGHT_THRESHOLD = 120_000
 const SIDEBAR_ROW_HEIGHT = 118
 const SIDEBAR_OVERSCAN = 8
 const SEARCH_DEBOUNCE_MS = 120
 
+function normalizeNamedFilter(value: string | null): string {
+  const trimmed = value?.trim() ?? ''
+  return trimmed === '' ? 'all' : trimmed
+}
+
+function parseModeFilter(value: string | null): ModeFilter {
+  return value === 'agentic' || value === 'nonagentic' ? value : 'all'
+}
+
+function parseDifficultyFilter(value: string | null): DifficultyFilter {
+  return value === 'easy' || value === 'medium' || value === 'hard' ? value : 'all'
+}
+
+function readUrlState(): UrlState {
+  const params = new URLSearchParams(window.location.search)
+  return {
+    id: params.get('id') ?? '',
+    search: params.get('q') ?? '',
+    modeFilter: parseModeFilter(params.get('mode')),
+    difficultyFilter: parseDifficultyFilter(params.get('difficulty')),
+    datasetFilter: normalizeNamedFilter(params.get('dataset')),
+    categoryFilter: normalizeNamedFilter(params.get('category')),
+  }
+}
+
 function getIdFromUrl(): string {
-  return new URLSearchParams(window.location.search).get('id') ?? ''
+  return readUrlState().id
+}
+
+function buildExplorerUrl(state: UrlState): string {
+  const params = new URLSearchParams(window.location.search)
+
+  if (state.id !== '') params.set('id', state.id)
+  else params.delete('id')
+
+  if (state.search.trim() !== '') params.set('q', state.search)
+  else params.delete('q')
+
+  if (state.modeFilter !== 'all') params.set('mode', state.modeFilter)
+  else params.delete('mode')
+
+  if (state.difficultyFilter !== 'all') params.set('difficulty', state.difficultyFilter)
+  else params.delete('difficulty')
+
+  if (state.datasetFilter !== 'all') params.set('dataset', state.datasetFilter)
+  else params.delete('dataset')
+
+  if (state.categoryFilter !== 'all') params.set('category', state.categoryFilter)
+  else params.delete('category')
+
+  const query = params.toString()
+  return query === '' ? window.location.pathname : `${window.location.pathname}?${query}`
 }
 
 function buildRecordUrl(recordId: string): string {
-  const params = new URLSearchParams(window.location.search)
-  params.set('id', recordId)
-  return `${window.location.pathname}?${params.toString()}`
+  return buildExplorerUrl({
+    ...readUrlState(),
+    id: recordId,
+  })
 }
 
 function CodeBlock({ file }: { file: FileEntry }): JSX.Element {
@@ -94,16 +157,18 @@ function CodeBlock({ file }: { file: FileEntry }): JSX.Element {
 }
 
 function App(): JSX.Element {
+  const initialUrlState = useMemo(() => readUrlState(), [])
+
   const [index, setIndex] = useState<IndexItem[]>([])
   const [selectedId, setSelectedId] = useState<string>('')
   const [selectedRecord, setSelectedRecord] = useState<RecordDetail | null>(null)
   const [selection, setSelection] = useState<FileSelection | null>(null)
 
-  const [search, setSearch] = useState('')
-  const [modeFilter, setModeFilter] = useState<'all' | 'agentic' | 'nonagentic'>('all')
-  const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'easy' | 'medium' | 'hard'>('all')
-  const [datasetFilter, setDatasetFilter] = useState('all')
-  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [search, setSearch] = useState(initialUrlState.search)
+  const [modeFilter, setModeFilter] = useState<ModeFilter>(initialUrlState.modeFilter)
+  const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>(initialUrlState.difficultyFilter)
+  const [datasetFilter, setDatasetFilter] = useState(initialUrlState.datasetFilter)
+  const [categoryFilter, setCategoryFilter] = useState(initialUrlState.categoryFilter)
 
   const [indexLoading, setIndexLoading] = useState(true)
   const [indexError, setIndexError] = useState<string | null>(null)
@@ -169,9 +234,16 @@ function App(): JSX.Element {
 
   useEffect(() => {
     const handlePopstate = (): void => {
-      const fromUrl = getIdFromUrl()
-      if (fromUrl !== '' && index.some((item) => item.id === fromUrl)) {
-        setSelectedId(fromUrl)
+      const state = readUrlState()
+
+      setSearch(state.search)
+      setModeFilter(state.modeFilter)
+      setDifficultyFilter(state.difficultyFilter)
+      setDatasetFilter(state.datasetFilter)
+      setCategoryFilter(state.categoryFilter)
+
+      if (state.id !== '' && index.some((item) => item.id === state.id)) {
+        setSelectedId(state.id)
       }
     }
 
@@ -272,6 +344,36 @@ function App(): JSX.Element {
   const categories = useMemo(() => {
     return ['all', ...Array.from(new Set(index.map((item) => item.category))).sort()]
   }, [index])
+
+  useEffect(() => {
+    if (indexLoading || index.length === 0) {
+      return
+    }
+
+    if (!datasets.includes(datasetFilter)) {
+      setDatasetFilter('all')
+    }
+
+    if (!categories.includes(categoryFilter)) {
+      setCategoryFilter('all')
+    }
+  }, [indexLoading, index.length, datasets, categories, datasetFilter, categoryFilter])
+
+  useEffect(() => {
+    const currentId = getIdFromUrl()
+    const nextUrl = buildExplorerUrl({
+      id: currentId,
+      search: debouncedSearch,
+      modeFilter,
+      difficultyFilter,
+      datasetFilter,
+      categoryFilter,
+    })
+    const currentUrl = `${window.location.pathname}${window.location.search}`
+    if (nextUrl !== currentUrl) {
+      window.history.replaceState({}, '', nextUrl)
+    }
+  }, [debouncedSearch, modeFilter, difficultyFilter, datasetFilter, categoryFilter])
 
   const filtered = useMemo(() => {
     return filterIndexRecords(index, {
@@ -376,7 +478,7 @@ function App(): JSX.Element {
             id="mode-filter"
             aria-label="Filter by mode"
             value={modeFilter}
-            onChange={(e) => setModeFilter(e.target.value as 'all' | 'agentic' | 'nonagentic')}
+            onChange={(e) => setModeFilter(e.target.value as ModeFilter)}
           >
             <option value="all">all modes</option>
             <option value="agentic">agentic</option>
@@ -390,7 +492,7 @@ function App(): JSX.Element {
             id="difficulty-filter"
             aria-label="Filter by difficulty"
             value={difficultyFilter}
-            onChange={(e) => setDifficultyFilter(e.target.value as 'all' | 'easy' | 'medium' | 'hard')}
+            onChange={(e) => setDifficultyFilter(e.target.value as DifficultyFilter)}
           >
             <option value="all">all difficulty</option>
             <option value="easy">easy</option>

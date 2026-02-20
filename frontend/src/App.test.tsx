@@ -116,6 +116,7 @@ function makeRecordPayload(overrides: Partial<RecordPayload> = {}): RecordPayloa
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  window.history.replaceState({}, '', '/')
 })
 
 describe('App', () => {
@@ -356,6 +357,89 @@ describe('App', () => {
 
     await waitFor(() => {
       expect(screen.getByText('record 30')).toBeInTheDocument()
+    })
+  })
+
+  it('hydrates selected record and filters from URL query params', async () => {
+    window.history.replaceState(
+      {},
+      '',
+      '/?id=cvdp_agentic_demo_case_0002&q=second&mode=agentic&difficulty=medium&dataset=agentic_code_generation_no_commercial&category=cid009',
+    )
+
+    const first = makeIndexItem({
+      id: 'cvdp_agentic_demo_case_0001',
+      title: 'first record',
+      category: 'cid001',
+    })
+    const second = makeIndexItem({
+      id: 'cvdp_agentic_demo_case_0002',
+      title: 'second record',
+      category: 'cid009',
+    })
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([first, second]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0002.json')) {
+        return mockOkJson(
+          makeRecordPayload({
+            meta: { ...makeRecordPayload().meta, id: 'cvdp_agentic_demo_case_0002', title: 'second record', category: 'cid009' },
+            prompt: { system: 'System for second', user: 'User prompt for second' },
+          }),
+        ) as unknown as Response
+      }
+      return mockOkJson(makeRecordPayload()) as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByRole('heading', { level: 2, name: 'second record' })
+    expect((screen.getByLabelText('Search records') as HTMLInputElement).value).toBe('second')
+    expect((screen.getByLabelText('Filter by mode') as HTMLSelectElement).value).toBe('agentic')
+    expect((screen.getByLabelText('Filter by difficulty') as HTMLSelectElement).value).toBe('medium')
+    expect((screen.getByLabelText('Filter by dataset') as HTMLSelectElement).value).toBe(
+      'agentic_code_generation_no_commercial',
+    )
+    expect((screen.getByLabelText('Filter by category') as HTMLSelectElement).value).toBe('cid009')
+  })
+
+  it('reflects filter and debounced search state in URL query params', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(makeRecordPayload()) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByText('demo case')
+
+    fireEvent.change(screen.getByLabelText('Filter by category'), { target: { value: 'cid001' } })
+    await waitFor(() => {
+      expect(window.location.search).toContain('category=cid001')
+    })
+
+    fireEvent.change(screen.getByLabelText('Search records'), { target: { value: 'demo' } })
+    await waitFor(() => {
+      expect(window.location.search).toContain('q=demo')
+      expect(window.location.search).toContain('id=cvdp_agentic_demo_case_0001')
+    })
+
+    fireEvent.change(screen.getByLabelText('Search records'), { target: { value: '' } })
+    await waitFor(() => {
+      expect(window.location.search).not.toContain('q=')
     })
   })
 })
