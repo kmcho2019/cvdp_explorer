@@ -17,6 +17,11 @@ RUN apt-get update && apt-get install -y \
     gh \
     && rm -rf /var/lib/apt/lists/*
 
+# Install uv (includes uvx) for Python environment and tool management.
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && ln -sf /root/.local/bin/uv /usr/local/bin/uv \
+    && ln -sf /root/.local/bin/uvx /usr/local/bin/uvx
+
 # Install global Node.js utilities for web development
 RUN npm install -g npm@latest yarn vite eslint prettier
 

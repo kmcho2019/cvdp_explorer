@@ -6,16 +6,16 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.defaultInterpreterPath": "/workspaces/cvdp_explorer/.venv/bin/python",
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "[python]": {
-          "editor.defaultFormatter": "ms-python.black-formatter"
+          "editor.defaultFormatter": "charliermarsh.ruff"
         }
       },
       "extensions": [
         "ms-python.python",
-        "ms-python.black-formatter",
+        "charliermarsh.ruff",
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "mshr-h.VerilogHDL",
@@ -24,6 +24,6 @@
     }
   },
   "forwardPorts": [5173],
-  "postCreateCommand": "git submodule update --init --recursive && cd frontend && npm install && cd ../data/scripts && pip install -r requirements.txt black flake8",
+  "postCreateCommand": "git submodule update --init --recursive && uv sync --group dev && cd frontend && npm ci",
   "remoteUser": "vscode"
 }
