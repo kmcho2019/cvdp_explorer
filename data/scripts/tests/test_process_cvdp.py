@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from process_cvdp import infer_language, parse_source_meta, process_all
 
 
@@ -24,6 +26,23 @@ def test_parse_source_meta_detects_dataset_properties() -> None:
     assert meta.mode == "nonagentic"
     assert meta.task_type == "code_generation"
     assert meta.commercial is False
+
+
+def test_parse_source_meta_handles_agentic_and_commercial_variants() -> None:
+    agentic = parse_source_meta(Path("cvdp_v1.0.2_agentic_code_generation_no_commercial.jsonl"))
+    assert agentic.mode == "agentic"
+    assert agentic.task_type == "code_generation"
+    assert agentic.commercial is False
+
+    commercial = parse_source_meta(Path("cvdp_v1.0.2_nonagentic_code_generation_commercial.jsonl"))
+    assert commercial.mode == "nonagentic"
+    assert commercial.task_type == "code_generation"
+    assert commercial.commercial is True
+
+
+def test_parse_source_meta_rejects_unknown_dataset_pattern() -> None:
+    with pytest.raises(ValueError, match="Unsupported dataset filename"):
+        parse_source_meta(Path("custom_dataset.jsonl"))
 
 
 def test_process_all_generates_index_records_and_stats(tmp_path: Path) -> None:
@@ -61,7 +80,11 @@ def test_process_all_generates_index_records_and_stats(tmp_path: Path) -> None:
             "response": "The golden model is in task check.",
             "context": {},
         },
-        "harness": {},
+        "harness": {
+            "files": {
+                "docker-compose.yml": "services:{}"
+            }
+        },
     }
 
     _write_jsonl(
@@ -92,7 +115,67 @@ def test_process_all_generates_index_records_and_stats(tmp_path: Path) -> None:
     record_two = json.loads((output_dir / "records" / "cvdp_copilot_demo_case_0002.json").read_text(encoding="utf-8"))
     assert record_two["expected_outputs"]["response_redacted"] is False
     assert record_two["expected_outputs"]["response_text"].startswith("The golden model")
+    assert record_two["harness_files"][0]["path"] == "docker-compose.yml"
+    assert record_two["harness_files"][0]["language"] == "yaml"
 
     stats = json.loads((output_dir / "stats.json").read_text(encoding="utf-8"))
     assert stats["record_count"] == 2
     assert sorted(stats["modes"]) == ["agentic", "nonagentic"]
+
+
+def test_process_all_fails_on_malformed_json(tmp_path: Path) -> None:
+    input_dir = tmp_path / "raw"
+    output_dir = tmp_path / "out"
+    input_dir.mkdir()
+
+    bad_file = input_dir / "cvdp_v1.0.2_nonagentic_code_generation_no_commercial.jsonl"
+    bad_file.write_text("{bad json}\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Malformed JSON"):
+        process_all(input_dir, output_dir)
+
+
+def test_process_all_fails_on_missing_id(tmp_path: Path) -> None:
+    input_dir = tmp_path / "raw"
+    output_dir = tmp_path / "out"
+    input_dir.mkdir()
+
+    record_missing_id = {
+        "categories": ["cid003", "medium"],
+        "input": {"prompt": "x", "context": {}},
+        "output": {"response": "", "context": {}},
+        "harness": {"files": {}},
+    }
+    _write_jsonl(input_dir / "cvdp_v1.0.2_nonagentic_code_generation_no_commercial.jsonl", [record_missing_id])
+
+    with pytest.raises(ValueError, match="Missing id"):
+        process_all(input_dir, output_dir)
+
+
+def test_process_all_fails_on_duplicate_ids_across_files(tmp_path: Path) -> None:
+    input_dir = tmp_path / "raw"
+    output_dir = tmp_path / "out"
+    input_dir.mkdir()
+
+    shared_id = "cvdp_copilot_demo_case_0003"
+
+    record_a = {
+        "id": shared_id,
+        "categories": ["cid003", "medium"],
+        "input": {"prompt": "x", "context": {}},
+        "output": {"response": "", "context": {}},
+        "harness": {"files": {}},
+    }
+    record_b = {
+        "id": shared_id,
+        "categories": ["cid009", "easy"],
+        "input": {"prompt": "y", "context": {}},
+        "output": {"response": "", "context": {}},
+        "harness": {"files": {}},
+    }
+
+    _write_jsonl(input_dir / "cvdp_v1.0.2_nonagentic_code_generation_no_commercial.jsonl", [record_a])
+    _write_jsonl(input_dir / "cvdp_v1.0.2_nonagentic_code_comprehension.jsonl", [record_b])
+
+    with pytest.raises(ValueError, match="Duplicate id"):
+        process_all(input_dir, output_dir)

@@ -188,6 +188,7 @@ def process_all(input_dir: Path, output_dir: Path) -> None:
     records_dir.mkdir(parents=True, exist_ok=True)
 
     index_items: list[dict[str, Any]] = []
+    seen_ids: dict[str, str] = {}
 
     for file_path in jsonl_files:
         meta = parse_source_meta(file_path)
@@ -205,6 +206,13 @@ def process_all(input_dir: Path, output_dir: Path) -> None:
                 record_id = index_item["id"]
                 if not record_id:
                     raise ValueError(f"Missing id in {file_path}:{line_num}")
+                if record_id in seen_ids:
+                    previous = seen_ids[record_id]
+                    raise ValueError(
+                        f"Duplicate id {record_id!r} found in {file_path}:{line_num}; "
+                        f"already seen in {previous}"
+                    )
+                seen_ids[record_id] = f"{file_path}:{line_num}"
 
                 record_path = records_dir / f"{record_id}.json"
                 record_path.write_text(json.dumps(full_record, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
