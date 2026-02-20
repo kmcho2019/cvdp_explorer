@@ -170,9 +170,16 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Benchmark Guide' }))
 
     expect(screen.getByRole('heading', { level: 2, name: 'Comprehensive Verilog Design Problems (CVDP)' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 3, name: 'Pinned Benchmark Baseline' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 3, name: 'How Evaluation Works' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 3, name: 'Explorer-to-Evaluation Field Mapping' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 3, name: 'Evaluation Interaction Diagrams' })).toBeInTheDocument()
+    expect(screen.getByText('1.0.2')).toBeInTheDocument()
+    expect(screen.getByText('6b1147d158985c123b74596d670c0862df9e58e9')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'nvidia/cvdp-benchmark-dataset' })).toHaveAttribute(
+      'href',
+      'https://huggingface.co/datasets/nvidia/cvdp-benchmark-dataset',
+    )
     expect(screen.getByText('cid013')).toBeInTheDocument()
     expect(screen.getByText('Test Plan to Testbench Checker')).toBeInTheDocument()
     expect(screen.getByText('System/User Prompt')).toBeInTheDocument()

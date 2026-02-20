@@ -373,6 +373,27 @@ body {
   padding-left: 1.1rem;
 }
 
+.guide-reference-list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.guide-reference-list a {
+  color: #1d4ed8;
+}
+
+.guide-reference-list a:hover {
+  color: #1e40af;
+}
+
+.guide-reference-note {
+  margin: 0.45rem 0 0;
+  color: #475569;
+  font-size: 0.8rem;
+}
+
 .guide-flow-list {
   margin: 0.3rem 0 0;
   padding-left: 1.2rem;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  BENCHMARK_REFERENCE_PIN,
   BENCHMARK_INTERACTION_CASES,
   CATEGORY_TO_INTERACTION_CASE,
   CATEGORY_GUIDE_ROWS,
@@ -67,6 +68,13 @@ describe('benchmarkGuide data', () => {
     expect(surfaces).toContain('Harness Files')
     expect(surfaces).toContain('Expected Output Files')
     expect(surfaces).toContain('Reference Response')
+  })
+
+  it('pins dataset and submodule reference baseline for traceability', () => {
+    expect(BENCHMARK_REFERENCE_PIN.datasetUrl).toBe('https://huggingface.co/datasets/nvidia/cvdp-benchmark-dataset')
+    expect(BENCHMARK_REFERENCE_PIN.datasetVersion).toBe('1.0.2')
+    expect(BENCHMARK_REFERENCE_PIN.submodulePath).toBe('cvdp_benchmark')
+    expect(BENCHMARK_REFERENCE_PIN.submoduleCommit).toBe('6b1147d158985c123b74596d670c0862df9e58e9')
   })
 })
 

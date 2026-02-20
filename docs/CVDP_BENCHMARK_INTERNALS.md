@@ -2,6 +2,22 @@
 
 This document explains how the `cvdp_benchmark/` submodule is structured, how benchmark data is represented, and how the repository processes datasets end-to-end.
 
+## 0. Pinned Reference Baseline
+
+Use this baseline to avoid ambiguity when upstream benchmark artifacts evolve:
+
+- CVDP dataset source: <https://huggingface.co/datasets/nvidia/cvdp-benchmark-dataset>
+- CVDP dataset version: `1.0.2`
+- Evaluator submodule path: `cvdp_benchmark`
+- Evaluator submodule commit: `6b1147d158985c123b74596d670c0862df9e58e9`
+- Paper snapshot path: `reference/paper/Comprehensive_Verilog_Design_Problems_2506.14074v1_md.md`
+
+Quick verification command:
+
+```bash
+git submodule status cvdp_benchmark
+```
+
 ## 1. Scope and Entry Points
 
 Main scripts:

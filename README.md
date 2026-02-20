@@ -12,6 +12,16 @@ For first-time readers:
 - [`README.md`](README.md): top-level setup, run, testing, and deployment quick guide.
 - [`docs/README.md`](docs/README.md): documentation index for architecture, pipeline, frontend, CI, and deployment details.
 - Live GitHub Pages site: <https://kmcho2019.github.io/cvdp_explorer/>
+- CVDP dataset (Hugging Face): <https://huggingface.co/datasets/nvidia/cvdp-benchmark-dataset>
+
+## Pinned CVDP Baseline
+
+- Dataset version: `1.0.2`
+- Dataset source: <https://huggingface.co/datasets/nvidia/cvdp-benchmark-dataset>
+- Evaluator submodule path: `cvdp_benchmark`
+- Evaluator submodule commit: `6b1147d158985c123b74596d670c0862df9e58e9`
+
+When the upstream benchmark dataset or evaluator changes, update this section and related docs/tests in the same PR to keep references traceable.
 
 ## Quick Start
 

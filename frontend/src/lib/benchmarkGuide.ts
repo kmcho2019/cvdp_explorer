@@ -42,6 +42,24 @@ export type BenchmarkInteractionCase = {
   mermaid: string
 }
 
+export type BenchmarkReferencePin = {
+  datasetName: string
+  datasetUrl: string
+  datasetVersion: string
+  benchmarkPaper: string
+  submodulePath: string
+  submoduleCommit: string
+}
+
+export const BENCHMARK_REFERENCE_PIN: BenchmarkReferencePin = {
+  datasetName: 'nvidia/cvdp-benchmark-dataset',
+  datasetUrl: 'https://huggingface.co/datasets/nvidia/cvdp-benchmark-dataset',
+  datasetVersion: '1.0.2',
+  benchmarkPaper: 'reference/paper/Comprehensive_Verilog_Design_Problems_2506.14074v1_md.md',
+  submodulePath: 'cvdp_benchmark',
+  submoduleCommit: '6b1147d158985c123b74596d670c0862df9e58e9',
+}
+
 export const BENCHMARK_OVERVIEW = {
   title: 'Comprehensive Verilog Design Problems (CVDP)',
   summary:

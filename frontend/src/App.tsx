@@ -12,6 +12,7 @@ import { buildFilterHierarchy } from './lib/hierarchy'
 import {
   availabilityLabel,
   BENCHMARK_INTERACTION_CASES,
+  BENCHMARK_REFERENCE_PIN,
   BENCHMARK_OVERVIEW,
   CATEGORY_TO_INTERACTION_CASE,
   CATEGORY_GUIDE_ROWS,
@@ -366,6 +367,30 @@ function BenchmarkGuidePanel(): JSX.Element {
         <h2>{BENCHMARK_OVERVIEW.title}</h2>
         <p>{BENCHMARK_OVERVIEW.summary}</p>
         <p>{BENCHMARK_OVERVIEW.datasetNote}</p>
+        <h3>Pinned Benchmark Baseline</h3>
+        <ul className="guide-reference-list">
+          <li>
+            Dataset:{' '}
+            <a href={BENCHMARK_REFERENCE_PIN.datasetUrl} target="_blank" rel="noreferrer">
+              {BENCHMARK_REFERENCE_PIN.datasetName}
+            </a>
+          </li>
+          <li>
+            Dataset version: <code>{BENCHMARK_REFERENCE_PIN.datasetVersion}</code>
+          </li>
+          <li>
+            Submodule path: <code>{BENCHMARK_REFERENCE_PIN.submodulePath}</code>
+          </li>
+          <li>
+            Submodule commit: <code>{BENCHMARK_REFERENCE_PIN.submoduleCommit}</code>
+          </li>
+          <li>
+            Paper snapshot: <code>{BENCHMARK_REFERENCE_PIN.benchmarkPaper}</code>
+          </li>
+        </ul>
+        <p className="guide-reference-note">
+          This pinned baseline is used as a traceable reference point when upstream benchmark datasets or evaluator code are updated.
+        </p>
         <h3>Primary Sources</h3>
         <ul className="guide-source-list">
           {BENCHMARK_OVERVIEW.sourcePaths.map((path) => (

@@ -115,6 +115,7 @@ Benchmark guide section:
 
 - the main panel includes a dedicated `Benchmark Guide` section alongside the record explorer
 - the guide summarizes benchmark goals, explains evaluation flow from submodule internals, and provides per-category behavior/scoring references
+- the guide includes a pinned benchmark baseline block with dataset source/version and submodule commit for reproducible references
 - a dedicated explorer-to-runtime mapping table explains how prompt/context/harness/reference fields map to `cvdp_benchmark` pipeline internals
 - interaction cases are rendered as Mermaid diagrams for objective generation, BLEU/ROUGE comprehension, LLM-subjective comprehension, agentic patch loop, context-heavy git workspaces, and commercial EDA overlays
 - all guide entries include source-path pointers back to `cvdp_benchmark` and paper/reference materials for traceability
