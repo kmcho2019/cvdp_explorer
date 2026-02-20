@@ -30,6 +30,7 @@ export function mapPrismLanguage(language: string): string {
 
 export type FilterOptions = {
   search: string
+  taskTypeFilter: 'all' | 'code_generation' | 'code_comprehension'
   modeFilter: 'all' | 'agentic' | 'nonagentic'
   difficultyFilter: 'all' | 'easy' | 'medium' | 'hard'
   datasetFilter: string
@@ -39,6 +40,7 @@ export type FilterOptions = {
 export function filterIndexRecords(index: IndexItem[], options: FilterOptions): IndexItem[] {
   const term = options.search.trim().toLowerCase()
   return index.filter((item) => {
+    if (options.taskTypeFilter !== 'all' && item.task_type !== options.taskTypeFilter) return false
     if (options.modeFilter !== 'all' && item.mode !== options.modeFilter) return false
     if (options.difficultyFilter !== 'all' && item.difficulty !== options.difficultyFilter) return false
     if (options.datasetFilter !== 'all' && item.dataset !== options.datasetFilter) return false

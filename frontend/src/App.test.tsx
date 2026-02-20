@@ -439,6 +439,83 @@ describe('App', () => {
     })
   })
 
+  it('supports hierarchy navigation by task type, category, mode, and difficulty', async () => {
+    const generationRecord = makeIndexItem({
+      id: 'cvdp_agentic_demo_case_0001',
+      title: 'generation record',
+      task_type: 'code_generation',
+      category: 'cid003',
+      mode: 'agentic',
+      difficulty: 'hard',
+    })
+    const comprehensionRecord = makeIndexItem({
+      id: 'cvdp_agentic_demo_case_0002',
+      title: 'comprehension record',
+      task_type: 'code_comprehension',
+      category: 'cid009',
+      mode: 'nonagentic',
+      difficulty: 'easy',
+    })
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([generationRecord, comprehensionRecord]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(
+          makeRecordPayload({
+            meta: {
+              ...makeRecordPayload().meta,
+              id: 'cvdp_agentic_demo_case_0001',
+              title: 'generation record',
+              task_type: 'code_generation',
+              category: 'cid003',
+              mode: 'agentic',
+              difficulty: 'hard',
+            },
+            prompt: { system: '', user: 'Generation prompt body' },
+          }),
+        ) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0002.json')) {
+        return mockOkJson(
+          makeRecordPayload({
+            meta: {
+              ...makeRecordPayload().meta,
+              id: 'cvdp_agentic_demo_case_0002',
+              title: 'comprehension record',
+              task_type: 'code_comprehension',
+              category: 'cid009',
+              mode: 'nonagentic',
+              difficulty: 'easy',
+            },
+            prompt: { system: '', user: 'Comprehension prompt body' },
+          }),
+        ) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByRole('heading', { level: 2, name: 'generation record' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter task type Code Comprehension' }))
+    await screen.findByRole('heading', { level: 2, name: 'comprehension record' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter category cid009 (Code comprehension, LLM subjective score-based)' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Filter mode nonagentic' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Filter difficulty easy' }))
+
+    expect((screen.getByLabelText('Filter by task type') as HTMLSelectElement).value).toBe('code_comprehension')
+    expect((screen.getByLabelText('Filter by category') as HTMLSelectElement).value).toBe('cid009')
+    expect((screen.getByLabelText('Filter by mode') as HTMLSelectElement).value).toBe('nonagentic')
+    expect((screen.getByLabelText('Filter by difficulty') as HTMLSelectElement).value).toBe('easy')
+  })
+
   it('virtualizes long record lists and updates visible rows on scroll', async () => {
     const indexPayload = Array.from({ length: 40 }, (_, idx) =>
       makeIndexItem({
@@ -483,7 +560,7 @@ describe('App', () => {
     window.history.replaceState(
       {},
       '',
-      '/?id=cvdp_agentic_demo_case_0002&q=second&mode=agentic&difficulty=medium&dataset=agentic_code_generation_no_commercial&category=cid009',
+      '/?id=cvdp_agentic_demo_case_0002&q=second&task=code_generation&mode=agentic&difficulty=medium&dataset=agentic_code_generation_no_commercial&category=cid009',
     )
 
     const first = makeIndexItem({
@@ -519,6 +596,7 @@ describe('App', () => {
 
     await screen.findByRole('heading', { level: 2, name: 'second record' })
     expect((screen.getByLabelText('Search records') as HTMLInputElement).value).toBe('second')
+    expect((screen.getByLabelText('Filter by task type') as HTMLSelectElement).value).toBe('code_generation')
     expect((screen.getByLabelText('Filter by mode') as HTMLSelectElement).value).toBe('agentic')
     expect((screen.getByLabelText('Filter by difficulty') as HTMLSelectElement).value).toBe('medium')
     expect((screen.getByLabelText('Filter by dataset') as HTMLSelectElement).value).toBe(
@@ -544,6 +622,11 @@ describe('App', () => {
     render(<App />)
 
     await screen.findByText('demo case')
+
+    fireEvent.change(screen.getByLabelText('Filter by task type'), { target: { value: 'code_generation' } })
+    await waitFor(() => {
+      expect(window.location.search).toContain('task=code_generation')
+    })
 
     fireEvent.change(screen.getByLabelText('Filter by category'), { target: { value: 'cid001' } })
     await waitFor(() => {

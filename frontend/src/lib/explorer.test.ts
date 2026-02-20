@@ -49,6 +49,7 @@ describe('filterIndexRecords', () => {
   it('returns all records when filters are default', () => {
     const result = filterIndexRecords(sample, {
       search: '',
+      taskTypeFilter: 'all',
       modeFilter: 'all',
       difficultyFilter: 'all',
       datasetFilter: 'all',
@@ -60,6 +61,7 @@ describe('filterIndexRecords', () => {
   it('filters by mode and difficulty', () => {
     const result = filterIndexRecords(sample, {
       search: '',
+      taskTypeFilter: 'all',
       modeFilter: 'nonagentic',
       difficultyFilter: 'easy',
       datasetFilter: 'all',
@@ -72,6 +74,7 @@ describe('filterIndexRecords', () => {
   it('filters by search term across index fields', () => {
     const result = filterIndexRecords(sample, {
       search: 'golden',
+      taskTypeFilter: 'all',
       modeFilter: 'all',
       difficultyFilter: 'all',
       datasetFilter: 'all',
@@ -84,6 +87,7 @@ describe('filterIndexRecords', () => {
   it('filters by dataset', () => {
     const result = filterIndexRecords(sample, {
       search: '',
+      taskTypeFilter: 'all',
       modeFilter: 'all',
       difficultyFilter: 'all',
       datasetFilter: 'agentic_code_generation_no_commercial',
@@ -96,6 +100,7 @@ describe('filterIndexRecords', () => {
   it('applies all filters together', () => {
     const result = filterIndexRecords(sample, {
       search: 'demo',
+      taskTypeFilter: 'code_generation',
       modeFilter: 'agentic',
       difficultyFilter: 'medium',
       datasetFilter: 'agentic_code_generation_no_commercial',
@@ -108,10 +113,24 @@ describe('filterIndexRecords', () => {
   it('filters by category', () => {
     const result = filterIndexRecords(sample, {
       search: '',
+      taskTypeFilter: 'all',
       modeFilter: 'all',
       difficultyFilter: 'all',
       datasetFilter: 'all',
       categoryFilter: 'cid009',
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('cvdp_copilot_demo_0002')
+  })
+
+  it('filters by task type', () => {
+    const result = filterIndexRecords(sample, {
+      search: '',
+      taskTypeFilter: 'code_comprehension',
+      modeFilter: 'all',
+      difficultyFilter: 'all',
+      datasetFilter: 'all',
+      categoryFilter: 'all',
     })
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe('cvdp_copilot_demo_0002')

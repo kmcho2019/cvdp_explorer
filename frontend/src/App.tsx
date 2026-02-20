@@ -8,6 +8,7 @@ import { useDebouncedValue } from './lib/useDebouncedValue'
 import { getBadgeClassName, type BadgeKind } from './lib/badges'
 import { highlightPromptCode, isInlineCodeNode } from './lib/promptMarkdown'
 import { formatCategoryLabel } from './lib/categories'
+import { buildFilterHierarchy } from './lib/hierarchy'
 
 type FileEntry = {
   path: string
@@ -52,10 +53,12 @@ type FileSelection = {
 
 type ModeFilter = 'all' | 'agentic' | 'nonagentic'
 type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard'
+type TaskTypeFilter = 'all' | 'code_generation' | 'code_comprehension'
 
 type UrlState = {
   id: string
   search: string
+  taskTypeFilter: TaskTypeFilter
   modeFilter: ModeFilter
   difficultyFilter: DifficultyFilter
   datasetFilter: string
@@ -76,8 +79,23 @@ function parseModeFilter(value: string | null): ModeFilter {
   return value === 'agentic' || value === 'nonagentic' ? value : 'all'
 }
 
+function parseTaskTypeFilter(value: string | null): TaskTypeFilter {
+  return value === 'code_generation' || value === 'code_comprehension' ? value : 'all'
+}
+
 function parseDifficultyFilter(value: string | null): DifficultyFilter {
   return value === 'easy' || value === 'medium' || value === 'hard' ? value : 'all'
+}
+
+function toDifficultyFilter(value: string): DifficultyFilter {
+  if (value === 'easy' || value === 'medium' || value === 'hard') return value
+  return 'all'
+}
+
+function taskTypeLabel(value: TaskTypeFilter): string {
+  if (value === 'code_generation') return 'Code Generation'
+  if (value === 'code_comprehension') return 'Code Comprehension'
+  return 'All Task Types'
 }
 
 function readUrlState(): UrlState {
@@ -85,6 +103,7 @@ function readUrlState(): UrlState {
   return {
     id: params.get('id') ?? '',
     search: params.get('q') ?? '',
+    taskTypeFilter: parseTaskTypeFilter(params.get('task')),
     modeFilter: parseModeFilter(params.get('mode')),
     difficultyFilter: parseDifficultyFilter(params.get('difficulty')),
     datasetFilter: normalizeNamedFilter(params.get('dataset')),
@@ -104,6 +123,9 @@ function buildExplorerUrl(state: UrlState): string {
 
   if (state.search.trim() !== '') params.set('q', state.search)
   else params.delete('q')
+
+  if (state.taskTypeFilter !== 'all') params.set('task', state.taskTypeFilter)
+  else params.delete('task')
 
   if (state.modeFilter !== 'all') params.set('mode', state.modeFilter)
   else params.delete('mode')
@@ -214,6 +236,7 @@ function App(): JSX.Element {
   const [selection, setSelection] = useState<FileSelection | null>(null)
 
   const [search, setSearch] = useState(initialUrlState.search)
+  const [taskTypeFilter, setTaskTypeFilter] = useState<TaskTypeFilter>(initialUrlState.taskTypeFilter)
   const [modeFilter, setModeFilter] = useState<ModeFilter>(initialUrlState.modeFilter)
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>(initialUrlState.difficultyFilter)
   const [datasetFilter, setDatasetFilter] = useState(initialUrlState.datasetFilter)
@@ -286,6 +309,7 @@ function App(): JSX.Element {
       const state = readUrlState()
 
       setSearch(state.search)
+      setTaskTypeFilter(state.taskTypeFilter)
       setModeFilter(state.modeFilter)
       setDifficultyFilter(state.difficultyFilter)
       setDatasetFilter(state.datasetFilter)
@@ -384,10 +408,14 @@ function App(): JSX.Element {
     if (recordListRef.current) {
       recordListRef.current.scrollTop = 0
     }
-  }, [debouncedSearch, modeFilter, difficultyFilter, datasetFilter, categoryFilter])
+  }, [debouncedSearch, taskTypeFilter, modeFilter, difficultyFilter, datasetFilter, categoryFilter])
 
   const datasets = useMemo(() => {
     return ['all', ...Array.from(new Set(index.map((item) => item.dataset))).sort()]
+  }, [index])
+
+  const taskTypes = useMemo(() => {
+    return ['all', ...Array.from(new Set(index.map((item) => item.task_type))).sort()] as TaskTypeFilter[]
   }, [index])
 
   const categories = useMemo(() => {
@@ -403,16 +431,21 @@ function App(): JSX.Element {
       setDatasetFilter('all')
     }
 
+    if (!taskTypes.includes(taskTypeFilter)) {
+      setTaskTypeFilter('all')
+    }
+
     if (!categories.includes(categoryFilter)) {
       setCategoryFilter('all')
     }
-  }, [indexLoading, index.length, datasets, categories, datasetFilter, categoryFilter])
+  }, [indexLoading, index.length, datasets, taskTypes, categories, datasetFilter, taskTypeFilter, categoryFilter])
 
   useEffect(() => {
     const currentId = getIdFromUrl()
     const nextUrl = buildExplorerUrl({
       id: currentId,
       search: debouncedSearch,
+      taskTypeFilter,
       modeFilter,
       difficultyFilter,
       datasetFilter,
@@ -422,17 +455,33 @@ function App(): JSX.Element {
     if (nextUrl !== currentUrl) {
       window.history.replaceState({}, '', nextUrl)
     }
-  }, [debouncedSearch, modeFilter, difficultyFilter, datasetFilter, categoryFilter])
+  }, [debouncedSearch, taskTypeFilter, modeFilter, difficultyFilter, datasetFilter, categoryFilter])
 
   const filtered = useMemo(() => {
     return filterIndexRecords(index, {
       search: debouncedSearch,
+      taskTypeFilter,
       modeFilter,
       difficultyFilter,
       datasetFilter,
       categoryFilter,
     })
-  }, [index, debouncedSearch, modeFilter, difficultyFilter, datasetFilter, categoryFilter])
+  }, [index, debouncedSearch, taskTypeFilter, modeFilter, difficultyFilter, datasetFilter, categoryFilter])
+
+  const hierarchySource = useMemo(() => {
+    return filterIndexRecords(index, {
+      search: debouncedSearch,
+      taskTypeFilter: 'all',
+      modeFilter: 'all',
+      difficultyFilter: 'all',
+      datasetFilter,
+      categoryFilter: 'all',
+    })
+  }, [index, debouncedSearch, datasetFilter])
+
+  const hierarchyTree = useMemo(() => {
+    return buildFilterHierarchy(hierarchySource)
+  }, [hierarchySource])
 
   useEffect(() => {
     if (indexLoading || filtered.length === 0) {
@@ -482,6 +531,41 @@ function App(): JSX.Element {
     setRecordReloadToken((value) => value + 1)
   }
 
+  const clearHierarchyFilters = (): void => {
+    setTaskTypeFilter('all')
+    setCategoryFilter('all')
+    setModeFilter('all')
+    setDifficultyFilter('all')
+  }
+
+  const applyHierarchyTaskType = (taskType: TaskTypeFilter): void => {
+    setTaskTypeFilter(taskType)
+    setCategoryFilter('all')
+    setModeFilter('all')
+    setDifficultyFilter('all')
+  }
+
+  const applyHierarchyCategory = (taskType: TaskTypeFilter, category: string): void => {
+    setTaskTypeFilter(taskType)
+    setCategoryFilter(category)
+    setModeFilter('all')
+    setDifficultyFilter('all')
+  }
+
+  const applyHierarchyMode = (taskType: TaskTypeFilter, category: string, mode: ModeFilter): void => {
+    setTaskTypeFilter(taskType)
+    setCategoryFilter(category)
+    setModeFilter(mode)
+    setDifficultyFilter('all')
+  }
+
+  const applyHierarchyDifficulty = (taskType: TaskTypeFilter, category: string, mode: ModeFilter, difficulty: string): void => {
+    setTaskTypeFilter(taskType)
+    setCategoryFilter(category)
+    setModeFilter(mode)
+    setDifficultyFilter(toDifficultyFilter(difficulty))
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -516,6 +600,22 @@ function App(): JSX.Element {
             {datasets.map((dataset) => (
               <option key={dataset} value={dataset}>
                 {dataset}
+              </option>
+            ))}
+          </select>
+
+          <label className="filter-label" htmlFor="task-filter">
+            Task Type
+          </label>
+          <select
+            id="task-filter"
+            aria-label="Filter by task type"
+            value={taskTypeFilter}
+            onChange={(e) => setTaskTypeFilter(e.target.value as TaskTypeFilter)}
+          >
+            {taskTypes.map((taskType) => (
+              <option key={taskType} value={taskType}>
+                {taskTypeLabel(taskType)}
               </option>
             ))}
           </select>
@@ -565,6 +665,111 @@ function App(): JSX.Element {
             ))}
           </select>
         </div>
+
+        <section className="hierarchy-nav" aria-label="Hierarchy navigator">
+          <div className="hierarchy-header">
+            <h2>Hierarchy Navigator</h2>
+            <button type="button" className="hierarchy-reset" onClick={clearHierarchyFilters}>
+              Reset hierarchy filters
+            </button>
+          </div>
+          <p className="hierarchy-note">Task type -&gt; category -&gt; mode -&gt; difficulty</p>
+
+          {hierarchyTree.length === 0 ? (
+            <div className="empty-note">No hierarchy nodes for current dataset/search.</div>
+          ) : (
+            <ul className="tree-level tree-level-task">
+              {hierarchyTree.map((taskNode) => (
+                <li key={taskNode.taskType}>
+                  <button
+                    type="button"
+                    className={taskTypeFilter === taskNode.taskType ? 'tree-node active' : 'tree-node'}
+                    onClick={() => applyHierarchyTaskType(taskNode.taskType)}
+                    aria-label={`Filter task type ${taskTypeLabel(taskNode.taskType)}`}
+                  >
+                    <MetadataBadge kind="taskType" value={taskNode.taskType} displayValue={taskTypeLabel(taskNode.taskType)} />
+                    <span className="tree-count">{taskNode.count}</span>
+                  </button>
+                  <ul className="tree-level tree-level-category">
+                    {taskNode.categories.map((categoryNode) => (
+                      <li key={`${taskNode.taskType}-${categoryNode.category}`}>
+                        <button
+                          type="button"
+                          className={
+                            taskTypeFilter === taskNode.taskType && categoryFilter === categoryNode.category
+                              ? 'tree-node active'
+                              : 'tree-node'
+                          }
+                          onClick={() => applyHierarchyCategory(taskNode.taskType, categoryNode.category)}
+                          aria-label={`Filter category ${formatCategoryLabel(categoryNode.category)}`}
+                        >
+                          <MetadataBadge
+                            kind="category"
+                            value={categoryNode.category}
+                            displayValue={formatCategoryLabel(categoryNode.category)}
+                          />
+                          <span className="tree-count">{categoryNode.count}</span>
+                        </button>
+                        <ul className="tree-level tree-level-mode">
+                          {categoryNode.modes.map((modeNode) => (
+                            <li key={`${taskNode.taskType}-${categoryNode.category}-${modeNode.mode}`}>
+                              <button
+                                type="button"
+                                className={
+                                  taskTypeFilter === taskNode.taskType &&
+                                  categoryFilter === categoryNode.category &&
+                                  modeFilter === modeNode.mode
+                                    ? 'tree-node active'
+                                    : 'tree-node'
+                                }
+                                onClick={() => applyHierarchyMode(taskNode.taskType, categoryNode.category, modeNode.mode)}
+                                aria-label={`Filter mode ${modeNode.mode}`}
+                              >
+                                <MetadataBadge kind="mode" value={modeNode.mode} />
+                                <span className="tree-count">{modeNode.count}</span>
+                              </button>
+                              <ul className="tree-level tree-level-difficulty">
+                                {modeNode.difficulties.map((difficultyNode) => (
+                                  <li
+                                    key={`${taskNode.taskType}-${categoryNode.category}-${modeNode.mode}-${difficultyNode.difficulty}`}
+                                  >
+                                    <button
+                                      type="button"
+                                      className={
+                                        taskTypeFilter === taskNode.taskType &&
+                                        categoryFilter === categoryNode.category &&
+                                        modeFilter === modeNode.mode &&
+                                        difficultyFilter === toDifficultyFilter(difficultyNode.difficulty)
+                                          ? 'tree-node active'
+                                          : 'tree-node'
+                                      }
+                                      onClick={() =>
+                                        applyHierarchyDifficulty(
+                                          taskNode.taskType,
+                                          categoryNode.category,
+                                          modeNode.mode,
+                                          difficultyNode.difficulty,
+                                        )
+                                      }
+                                      aria-label={`Filter difficulty ${difficultyNode.difficulty}`}
+                                    >
+                                      <MetadataBadge kind="difficulty" value={difficultyNode.difficulty} />
+                                      <span className="tree-count">{difficultyNode.count}</span>
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            </li>
+                          ))}
+                        </ul>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         {indexError ? (
           <div className="sidebar-error" role="alert">
