@@ -150,11 +150,16 @@ Commit conventions:
 1. Keep one logical change per commit.
 2. Use clear scopes (examples: `data`, `frontend`, `docs`, `ci`).
 3. Prefer multi-line commit bodies for non-trivial changes.
-4. Mention concrete validation commands in the body.
-5. Keep history reviewable: avoid mixing unrelated refactors and features.
-6. Use signoff for each git commit if possible.
-7. Before pushing, verify the final commit message formatting:
+4. Keep body spacing compact:
+   - no empty line between section heading and first bullet (`Why:`, `What:`, `Validation:`)
+   - no empty line between bullets inside the same section
+   - keep exactly one blank line between subject and body
+5. Mention concrete validation commands in the body.
+6. Keep history reviewable: avoid mixing unrelated refactors and features.
+7. Use signoff for each git commit if possible.
+8. Before pushing, verify the final commit message formatting:
    - run `git log -1 --pretty=%B`
+   - confirm section spacing is compact (no excessive blank lines)
    - ensure no literal escape artifacts like `\n`, `\t`, or `\r` appear in the message body
    - if malformed text is found, fix it before pushing (for latest commit, use `git commit --amend`)
 
