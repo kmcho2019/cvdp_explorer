@@ -57,7 +57,10 @@ npm run build
 
 ## Documentation
 
-- `SPECIFICATION_AND_DEVELOPMENT_PLAN.md`: implementation blueprint.
+Project docs are consolidated under `docs/`.
+
+- `docs/README.md`: documentation index.
+- `docs/SPECIFICATION_AND_DEVELOPMENT_PLAN.md`: implementation blueprint.
 - `docs/ARCHITECTURE.md`: system design and repository layout.
 - `docs/CVDP_BENCHMARK_INTERNALS.md`: deep dive into `cvdp_benchmark` data model and processing pipeline internals.
 - `docs/DATA_PIPELINE.md`: normalization and output contract.
