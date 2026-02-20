@@ -18,3 +18,8 @@ frontend/public/data/
 # OS/editor
 .DS_Store
 .vscode/
+
+# Top-level Markdown files (keep repo root clean)
+/*.md
+!/README.md
+!/GUIDELINES.md

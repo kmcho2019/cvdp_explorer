@@ -4,6 +4,14 @@ Static explorer for the NVIDIA CVDP benchmark dataset.
 
 This repository converts raw benchmark JSONL files into a frontend-friendly format and serves an interactive React UI for browsing prompts, context files, harness files, and redacted reference outputs.
 
+## Quick Links
+
+For first-time readers:
+
+- [`GUIDELINES.md`](GUIDELINES.md): contributor map (where to edit, validate, and document changes).
+- [`README.md`](README.md): top-level setup, run, testing, and deployment quick guide.
+- [`docs/README.md`](docs/README.md): documentation index for architecture, pipeline, frontend, CI, and deployment details.
+
 ## Quick Start
 
 ## 1. Ensure submodules are initialized
