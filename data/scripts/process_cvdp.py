@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-
 LANGUAGE_BY_EXT = {
     ".sv": "systemverilog",
     ".v": "systemverilog",
@@ -83,7 +82,9 @@ def infer_title(record_id: str) -> str:
     return record_id
 
 
-def normalize_record(raw: dict[str, Any], source_file: str, source_meta: SourceMeta) -> tuple[dict[str, Any], dict[str, Any]]:
+def normalize_record(
+    raw: dict[str, Any], source_file: str, source_meta: SourceMeta
+) -> tuple[dict[str, Any], dict[str, Any]]:
     categories = raw.get("categories", [])
     category = categories[0] if len(categories) > 0 else "unknown"
     difficulty = categories[1] if len(categories) > 1 else "unknown"
@@ -92,7 +93,9 @@ def normalize_record(raw: dict[str, Any], source_file: str, source_meta: SourceM
 
     if is_agentic:
         prompt_user = raw.get("prompt", "") if isinstance(raw.get("prompt"), str) else ""
-        prompt_system = raw.get("system_message", "") if isinstance(raw.get("system_message"), str) else ""
+        prompt_system = (
+            raw.get("system_message", "") if isinstance(raw.get("system_message"), str) else ""
+        )
         context_map = raw.get("context", {}) if isinstance(raw.get("context"), dict) else {}
         harness_map = raw.get("harness", {}) if isinstance(raw.get("harness"), dict) else {}
         output_map = raw.get("patch", {}) if isinstance(raw.get("patch"), dict) else {}
@@ -102,11 +105,21 @@ def normalize_record(raw: dict[str, Any], source_file: str, source_meta: SourceM
         output_block = raw.get("output", {}) if isinstance(raw.get("output"), dict) else {}
         harness_block = raw.get("harness", {}) if isinstance(raw.get("harness"), dict) else {}
 
-        prompt_user = input_block.get("prompt", "") if isinstance(input_block.get("prompt"), str) else ""
+        prompt_user = (
+            input_block.get("prompt", "") if isinstance(input_block.get("prompt"), str) else ""
+        )
         prompt_system = ""
-        context_map = input_block.get("context", {}) if isinstance(input_block.get("context"), dict) else {}
-        output_map = output_block.get("context", {}) if isinstance(output_block.get("context"), dict) else {}
-        response_text = output_block.get("response", "") if isinstance(output_block.get("response"), str) else ""
+        context_map = (
+            input_block.get("context", {}) if isinstance(input_block.get("context"), dict) else {}
+        )
+        output_map = (
+            output_block.get("context", {}) if isinstance(output_block.get("context"), dict) else {}
+        )
+        response_text = (
+            output_block.get("response", "")
+            if isinstance(output_block.get("response"), str)
+            else ""
+        )
 
         files_block = harness_block.get("files")
         if isinstance(files_block, dict):
@@ -130,7 +143,9 @@ def normalize_record(raw: dict[str, Any], source_file: str, source_meta: SourceM
         )
 
     response_redacted = response_text.strip() == ""
-    solutions_redacted = all(item["redacted"] for item in expected_target_files) and response_redacted
+    solutions_redacted = (
+        all(item["redacted"] for item in expected_target_files) and response_redacted
+    )
 
     full = {
         "meta": {
@@ -215,12 +230,16 @@ def process_all(input_dir: Path, output_dir: Path) -> None:
                 seen_ids[record_id] = f"{file_path}:{line_num}"
 
                 record_path = records_dir / f"{record_id}.json"
-                record_path.write_text(json.dumps(full_record, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+                record_path.write_text(
+                    json.dumps(full_record, ensure_ascii=True, indent=2) + "\n", encoding="utf-8"
+                )
                 index_items.append(index_item)
 
     index_items.sort(key=lambda x: x["id"])
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "index.json").write_text(json.dumps(index_items, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    (output_dir / "index.json").write_text(
+        json.dumps(index_items, ensure_ascii=True, indent=2) + "\n", encoding="utf-8"
+    )
 
     stats = {
         "record_count": len(index_items),
@@ -228,13 +247,23 @@ def process_all(input_dir: Path, output_dir: Path) -> None:
         "modes": sorted({item["mode"] for item in index_items}),
         "task_types": sorted({item["task_type"] for item in index_items}),
     }
-    (output_dir / "stats.json").write_text(json.dumps(stats, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    (output_dir / "stats.json").write_text(
+        json.dumps(stats, ensure_ascii=True, indent=2) + "\n", encoding="utf-8"
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Process CVDP JSONL files into explorer-ready JSON.")
-    parser.add_argument("--input-dir", default="../raw", help="Directory containing source JSONL files.")
-    parser.add_argument("--output-dir", default="../../frontend/public/data", help="Output directory for normalized JSON files.")
+    parser = argparse.ArgumentParser(
+        description="Process CVDP JSONL files into explorer-ready JSON."
+    )
+    parser.add_argument(
+        "--input-dir", default="../raw", help="Directory containing source JSONL files."
+    )
+    parser.add_argument(
+        "--output-dir",
+        default="../../frontend/public/data",
+        help="Output directory for normalized JSON files.",
+    )
     return parser
 
 

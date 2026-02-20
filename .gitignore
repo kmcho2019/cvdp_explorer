@@ -3,6 +3,9 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.venv/
+.ruff_cache/
+.pytest_cache/
 
 # Node / Vite
 frontend/node_modules/

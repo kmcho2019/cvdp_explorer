@@ -1,0 +1,26 @@
+[project]
+name = "cvdp-explorer"
+version = "0.1.0"
+description = "Static explorer and data pipeline for the NVIDIA CVDP benchmark."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "pytest==8.3.5",
+  "ruff==0.15.2",
+  "ty==0.0.17",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["data/scripts/tests"]
+python_files = ["test_*.py"]

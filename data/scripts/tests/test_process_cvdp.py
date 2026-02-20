@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from process_cvdp import infer_language, parse_source_meta, process_all
 
 
@@ -59,12 +58,8 @@ def test_process_all_generates_index_records_and_stats(tmp_path: Path) -> None:
             "rtl/demo.sv": "module demo; endmodule",
             "docs/specification.md": "# Spec",
         },
-        "patch": {
-            "rtl/demo.sv": ""
-        },
-        "harness": {
-            "src/test_runner.py": "print('run')"
-        },
+        "patch": {"rtl/demo.sv": ""},
+        "harness": {"src/test_runner.py": "print('run')"},
     }
 
     nonagentic_record = {
@@ -72,19 +67,13 @@ def test_process_all_generates_index_records_and_stats(tmp_path: Path) -> None:
         "categories": ["cid009", "easy"],
         "input": {
             "prompt": "Explain the section",
-            "context": {
-                "verif/tb_demo.sv": "task check; endtask"
-            },
+            "context": {"verif/tb_demo.sv": "task check; endtask"},
         },
         "output": {
             "response": "The golden model is in task check.",
             "context": {},
         },
-        "harness": {
-            "files": {
-                "docker-compose.yml": "services:{}"
-            }
-        },
+        "harness": {"files": {"docker-compose.yml": "services:{}"}},
     }
 
     _write_jsonl(
@@ -107,12 +96,16 @@ def test_process_all_generates_index_records_and_stats(tmp_path: Path) -> None:
     assert by_id["cvdp_copilot_demo_case_0002"]["task_type"] == "code_comprehension"
     assert by_id["cvdp_copilot_demo_case_0002"]["has_reference_text"] is True
 
-    record_one = json.loads((output_dir / "records" / "cvdp_agentic_demo_case_0001.json").read_text(encoding="utf-8"))
+    record_one = json.loads(
+        (output_dir / "records" / "cvdp_agentic_demo_case_0001.json").read_text(encoding="utf-8")
+    )
     assert record_one["prompt"]["system"] == "system text"
     assert record_one["expected_outputs"]["target_files"][0]["redacted"] is True
     assert record_one["context_files"][0]["language"] in {"markdown", "systemverilog"}
 
-    record_two = json.loads((output_dir / "records" / "cvdp_copilot_demo_case_0002.json").read_text(encoding="utf-8"))
+    record_two = json.loads(
+        (output_dir / "records" / "cvdp_copilot_demo_case_0002.json").read_text(encoding="utf-8")
+    )
     assert record_two["expected_outputs"]["response_redacted"] is False
     assert record_two["expected_outputs"]["response_text"].startswith("The golden model")
     assert record_two["harness_files"][0]["path"] == "docker-compose.yml"
@@ -146,7 +139,10 @@ def test_process_all_fails_on_missing_id(tmp_path: Path) -> None:
         "output": {"response": "", "context": {}},
         "harness": {"files": {}},
     }
-    _write_jsonl(input_dir / "cvdp_v1.0.2_nonagentic_code_generation_no_commercial.jsonl", [record_missing_id])
+    _write_jsonl(
+        input_dir / "cvdp_v1.0.2_nonagentic_code_generation_no_commercial.jsonl",
+        [record_missing_id],
+    )
 
     with pytest.raises(ValueError, match="Missing id"):
         process_all(input_dir, output_dir)
@@ -174,7 +170,9 @@ def test_process_all_fails_on_duplicate_ids_across_files(tmp_path: Path) -> None
         "harness": {"files": {}},
     }
 
-    _write_jsonl(input_dir / "cvdp_v1.0.2_nonagentic_code_generation_no_commercial.jsonl", [record_a])
+    _write_jsonl(
+        input_dir / "cvdp_v1.0.2_nonagentic_code_generation_no_commercial.jsonl", [record_a]
+    )
     _write_jsonl(input_dir / "cvdp_v1.0.2_nonagentic_code_comprehension.jsonl", [record_b])
 
     with pytest.raises(ValueError, match="Duplicate id"):

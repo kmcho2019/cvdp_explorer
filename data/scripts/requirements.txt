@@ -1,5 +1,0 @@
-# Runtime dependencies
-# (currently none required for preprocessing)
-
-# Test dependencies
-pytest==8.3.5
