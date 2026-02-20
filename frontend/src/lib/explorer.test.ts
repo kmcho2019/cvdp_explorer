@@ -52,6 +52,7 @@ describe('filterIndexRecords', () => {
       modeFilter: 'all',
       difficultyFilter: 'all',
       datasetFilter: 'all',
+      categoryFilter: 'all',
     })
     expect(result).toHaveLength(2)
   })
@@ -62,6 +63,7 @@ describe('filterIndexRecords', () => {
       modeFilter: 'nonagentic',
       difficultyFilter: 'easy',
       datasetFilter: 'all',
+      categoryFilter: 'all',
     })
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe('cvdp_copilot_demo_0002')
@@ -73,6 +75,7 @@ describe('filterIndexRecords', () => {
       modeFilter: 'all',
       difficultyFilter: 'all',
       datasetFilter: 'all',
+      categoryFilter: 'all',
     })
     expect(result).toHaveLength(1)
     expect(result[0].title).toContain('golden model')
@@ -84,6 +87,7 @@ describe('filterIndexRecords', () => {
       modeFilter: 'all',
       difficultyFilter: 'all',
       datasetFilter: 'agentic_code_generation_no_commercial',
+      categoryFilter: 'all',
     })
     expect(result).toHaveLength(1)
     expect(result[0].mode).toBe('agentic')
@@ -95,8 +99,21 @@ describe('filterIndexRecords', () => {
       modeFilter: 'agentic',
       difficultyFilter: 'medium',
       datasetFilter: 'agentic_code_generation_no_commercial',
+      categoryFilter: 'cid001',
     })
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe('cvdp_agentic_demo_0001')
+  })
+
+  it('filters by category', () => {
+    const result = filterIndexRecords(sample, {
+      search: '',
+      modeFilter: 'all',
+      difficultyFilter: 'all',
+      datasetFilter: 'all',
+      categoryFilter: 'cid009',
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('cvdp_copilot_demo_0002')
   })
 })

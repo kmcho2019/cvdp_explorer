@@ -269,4 +269,93 @@ describe('App', () => {
     await screen.findByText(/Large file \(/)
     expect(screen.getByRole('button', { name: 'Enable syntax highlighting' })).toBeInTheDocument()
   })
+
+  it('applies category filter from the sidebar controls', async () => {
+    const first = makeIndexItem({
+      id: 'cvdp_agentic_demo_case_0001',
+      title: 'first record',
+      category: 'cid001',
+    })
+    const second = makeIndexItem({
+      id: 'cvdp_agentic_demo_case_0002',
+      title: 'second record',
+      category: 'cid009',
+    })
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([first, second]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(
+          makeRecordPayload({
+            meta: { ...makeRecordPayload().meta, id: 'cvdp_agentic_demo_case_0001', title: 'first record' },
+            prompt: { system: 'First system prompt', user: 'First user prompt' },
+          }),
+        ) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0002.json')) {
+        return mockOkJson(
+          makeRecordPayload({
+            meta: { ...makeRecordPayload().meta, id: 'cvdp_agentic_demo_case_0002', title: 'second record' },
+            prompt: { system: 'Second system prompt', user: 'Second user prompt' },
+          }),
+        ) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByText('first record')
+    fireEvent.change(screen.getByLabelText('Filter by category'), { target: { value: 'cid009' } })
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 2, name: 'second record' })).toBeInTheDocument()
+      expect(screen.getByText('Second user prompt')).toBeInTheDocument()
+    })
+  })
+
+  it('virtualizes long record lists and updates visible rows on scroll', async () => {
+    const indexPayload = Array.from({ length: 40 }, (_, idx) =>
+      makeIndexItem({
+        id: `cvdp_agentic_demo_case_${String(idx + 1).padStart(4, '0')}`,
+        title: `record ${idx + 1}`,
+        category: `cid${String((idx % 10) + 1).padStart(3, '0')}`,
+      }),
+    )
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson(indexPayload) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(
+          makeRecordPayload({
+            meta: { ...makeRecordPayload().meta, id: 'cvdp_agentic_demo_case_0001', title: 'record 1' },
+          }),
+        ) as unknown as Response
+      }
+      return mockOkJson(makeRecordPayload()) as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByText('record 1')
+    expect(screen.queryByText('record 40')).not.toBeInTheDocument()
+
+    const list = document.querySelector('.record-list')
+    expect(list).toBeTruthy()
+    fireEvent.scroll(list as Element, { target: { scrollTop: 3100 } })
+
+    await waitFor(() => {
+      expect(screen.getByText('record 30')).toBeInTheDocument()
+    })
+  })
 })
