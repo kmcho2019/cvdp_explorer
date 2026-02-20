@@ -118,14 +118,11 @@ Recommended format:
 ```text
 <type>(<scope>): <short imperative summary>
 
-Why:
-- motivation and context
+- motivation and context (the why)
 
-What:
-- key implementation changes
+- key implementation changes (the what)
 
-Validation:
-- tests/build/commands run
+- tests/build/commands run (validation)
 ```
 
 Commit conventions:
