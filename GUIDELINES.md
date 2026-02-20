@@ -133,6 +133,10 @@ Commit conventions:
 4. Mention concrete validation commands in the body.
 5. Keep history reviewable: avoid mixing unrelated refactors and features.
 6. Use signoff for each git commit if possible.
+7. Before pushing, verify the final commit message formatting:
+   - run `git log -1 --pretty=%B`
+   - ensure no literal escape artifacts like `\n`, `\t`, or `\r` appear in the message body
+   - if malformed text is found, fix it before pushing (for latest commit, use `git commit --amend`)
 
 Common commit types:
 
