@@ -195,6 +195,36 @@ describe('App', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'demo case' })).toBeInTheDocument()
   })
 
+  it('renders attribution section with repository and author links', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(makeRecordPayload()) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByRole('heading', { level: 2, name: 'demo case' })
+    fireEvent.click(screen.getByRole('button', { name: 'Attribution' }))
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Attribution' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'https://github.com/kmcho2019/cvdp_explorer' })).toHaveAttribute(
+      'href',
+      'https://github.com/kmcho2019/cvdp_explorer',
+    )
+    expect(screen.getByRole('link', { name: 'Kyumin Cho' })).toHaveAttribute('href', 'https://github.com/kmcho2019')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Record Explorer' }))
+    expect(screen.getByRole('heading', { level: 2, name: 'demo case' })).toBeInTheDocument()
+  })
+
   it('applies semantic badge classes for record metadata', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)

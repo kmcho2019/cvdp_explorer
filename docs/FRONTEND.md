@@ -117,7 +117,7 @@ Alternative hierarchy navigation:
 
 Benchmark guide section:
 
-- the main panel includes a dedicated `Benchmark Guide` section alongside the record explorer
+- the main panel includes dedicated `Benchmark Guide` and `Attribution` sections alongside the record explorer
 - the guide summarizes benchmark goals, explains evaluation flow from submodule internals, and provides per-category behavior/scoring references
 - the guide includes a pinned benchmark baseline block with dataset source/version and submodule commit for reproducible references
 - a dedicated explorer-to-runtime mapping table explains how prompt/context/harness/reference fields map to `cvdp_benchmark` pipeline internals
@@ -125,6 +125,7 @@ Benchmark guide section:
 - all guide entries include source-path pointers back to `cvdp_benchmark` and paper/reference materials for traceability
 - Mermaid diagrams use deterministic component-scoped IDs and async loading state handling to avoid rerender churn and visual flicker
 - Mermaid rendering falls back to raw diagram source blocks if runtime rendering is unavailable
+- the attribution section includes direct links to the project repository and maintainer profile
 
 ## 6. Syntax Highlighting and Performance Guardrail
 
@@ -205,6 +206,7 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - category filter + selected record synchronization behavior
 - hierarchy navigation interactions across task type/category/mode/difficulty
 - benchmark-guide section rendering and section-switch behavior
+- attribution section rendering and repository/author link integrity
 - benchmark-guide interaction map and diagram section rendering
 - benchmark-guide interaction case visibility coverage across all defined runtime paths
 - virtualization behavior for long record lists

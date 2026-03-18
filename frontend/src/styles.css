@@ -368,6 +368,26 @@ body {
   margin-top: 0;
 }
 
+.attribution-card h2 {
+  margin-top: 0;
+}
+
+.attribution-list {
+  margin: 0.45rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.attribution-list a {
+  color: #1d4ed8;
+  word-break: break-word;
+}
+
+.attribution-list a:hover {
+  color: #1e40af;
+}
+
 .guide-source-list {
   margin: 0.4rem 0 0;
   padding-left: 1.1rem;

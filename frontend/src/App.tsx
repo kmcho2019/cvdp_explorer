@@ -66,7 +66,7 @@ type FileSelection = {
 type ModeFilter = 'all' | 'agentic' | 'nonagentic'
 type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard'
 type TaskTypeFilter = 'all' | 'code_generation' | 'code_comprehension'
-type MainPanelSection = 'records' | 'benchmark'
+type MainPanelSection = 'records' | 'benchmark' | 'attribution'
 type PromptViewMode = 'rendered' | 'raw'
 type MarkdownRenderSurface = 'prompt' | 'file'
 
@@ -84,6 +84,9 @@ const LARGE_FILE_HIGHLIGHT_THRESHOLD = 120_000
 const SIDEBAR_ROW_HEIGHT = 118
 const SIDEBAR_OVERSCAN = 8
 const SEARCH_DEBOUNCE_MS = 120
+const PROJECT_REPOSITORY_URL = 'https://github.com/kmcho2019/cvdp_explorer'
+const PROJECT_AUTHOR_NAME = 'Kyumin Cho'
+const PROJECT_AUTHOR_URL = 'https://github.com/kmcho2019'
 let mermaidInitialized = false
 let mermaidDiagramSequence = 0
 
@@ -562,6 +565,29 @@ function BenchmarkGuidePanel(): JSX.Element {
         </div>
       </section>
     </>
+  )
+}
+
+function AttributionPanel(): JSX.Element {
+  return (
+    <section className="card attribution-card">
+      <h2>Attribution</h2>
+      <p>This explorer is maintained as an open source project with benchmark data and tooling references from NVIDIA CVDP resources.</p>
+      <ul className="attribution-list">
+        <li>
+          Repository:{' '}
+          <a href={PROJECT_REPOSITORY_URL} target="_blank" rel="noreferrer">
+            {PROJECT_REPOSITORY_URL}
+          </a>
+        </li>
+        <li>
+          Author:{' '}
+          <a href={PROJECT_AUTHOR_URL} target="_blank" rel="noreferrer">
+            {PROJECT_AUTHOR_NAME}
+          </a>
+        </li>
+      </ul>
+    </section>
   )
 }
 
@@ -1175,10 +1201,19 @@ function App(): JSX.Element {
           >
             Benchmark Guide
           </button>
+          <button
+            type="button"
+            className={mainSection === 'attribution' ? 'panel-switch-button active' : 'panel-switch-button'}
+            onClick={() => setMainSection('attribution')}
+          >
+            Attribution
+          </button>
         </section>
 
         {mainSection === 'benchmark' ? (
           <BenchmarkGuidePanel />
+        ) : mainSection === 'attribution' ? (
+          <AttributionPanel />
         ) : (
           <>
             {indexLoading ? (
