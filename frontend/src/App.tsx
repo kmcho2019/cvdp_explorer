@@ -214,7 +214,17 @@ function buildRecordCanonicalUrl(recordId: string): string {
   const url = new URL(window.location.href)
   url.search = ''
   url.searchParams.set('id', recordId)
-  return url.toString()
+  return normalizeCanonicalUrl(url.toString())
+}
+
+function normalizeCanonicalUrl(rawUrl: string): string {
+  const normalized = new URL(rawUrl)
+
+  if ((normalized.hostname === 'localhost' || normalized.hostname === '127.0.0.1') && normalized.port !== '') {
+    normalized.port = ''
+  }
+
+  return normalized.toString()
 }
 
 function upsertMetaTagContent(attributeName: 'name' | 'property', attributeValue: string, content: string): void {
@@ -239,9 +249,12 @@ function setCanonicalUrl(canonicalUrl: string): void {
 }
 
 function setRecordJsonLd(record: RecordDetail | null): void {
-  const target = document.getElementById('record-jsonld')
+  let target = document.querySelector<HTMLScriptElement>('#record-jsonld')
   if (target === null) {
-    return
+    target = document.createElement('script')
+    target.setAttribute('id', 'record-jsonld')
+    target.setAttribute('type', 'application/ld+json')
+    document.head.appendChild(target)
   }
 
   if (record === null) {
@@ -1090,7 +1103,7 @@ function App(): JSX.Element {
     document.title = title
 
     const canonicalUrl = selectedRecord === null
-      ? `${window.location.origin}${window.location.pathname}`
+      ? normalizeCanonicalUrl(`${window.location.origin}${window.location.pathname}`)
       : buildRecordCanonicalUrl(selectedRecord.meta.id)
 
     setCanonicalUrl(canonicalUrl)
