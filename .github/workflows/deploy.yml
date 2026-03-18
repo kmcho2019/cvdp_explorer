@@ -54,6 +54,14 @@ jobs:
         run: |
           test -f frontend/dist/index.html
           test -f frontend/dist/data/index.json
+          test -f frontend/dist/robots.txt
+          test -f frontend/dist/sitemap.xml
+
+          if ls frontend/public/google*.html >/dev/null 2>&1; then
+            for verification_file in frontend/public/google*.html; do
+              test -f "frontend/dist/$(basename "$verification_file")"
+            done
+          fi
 
           OWNER="${GITHUB_REPOSITORY%%/*}"
           REPO="${GITHUB_REPOSITORY#*/}"
