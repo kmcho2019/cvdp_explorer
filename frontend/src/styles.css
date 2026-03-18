@@ -775,24 +775,29 @@ body {
 .copy-button--top-right {
   position: absolute;
   right: 0.45rem;
-  top: 0.05rem;
+  top: 0.5rem;
 }
 
-.copy-feedback {
-  margin: 0.3rem 0;
-  padding: 0.55rem;
+.copy-toast {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 30;
+  margin: 0;
+  padding: 0.55rem 0.75rem;
   border-radius: 8px;
   border: 1px solid;
   font-size: 0.8rem;
+  box-shadow: 0 8px 22px rgb(15 23 42 / 0.15);
 }
 
-.copy-feedback--success {
+.copy-toast--success {
   border-color: #34d399;
   background: #ecfdf5;
   color: #047857;
 }
 
-.copy-feedback--error {
+.copy-toast--error {
   border-color: #fca5a5;
   background: #fef2f2;
   color: #991b1b;
@@ -961,6 +966,26 @@ body {
   justify-content: space-between;
   gap: 0.5rem;
   flex-wrap: wrap;
+  cursor: pointer;
+}
+
+.problem-copy-header:hover .problem-copy-disclosure {
+  color: #1e3a8a;
+}
+
+.problem-copy-header:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.problem-copy-header h3 {
+  margin: 0;
+}
+
+.problem-copy-disclosure {
+  font-size: 0.75rem;
+  color: #475569;
 }
 
 .problem-copy-preview {

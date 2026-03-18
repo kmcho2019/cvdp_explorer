@@ -122,10 +122,13 @@ describe('buildProblemBundleText', () => {
 
 describe('copyTextToClipboard', () => {
   it('throws when clipboard API is unavailable', async () => {
-    const originalClipboard = globalThis.navigator.clipboard
-    Object.defineProperty(globalThis.navigator, 'clipboard', {
+    const originalNavigator = globalThis.navigator
+    const navigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
+
+    Object.defineProperty(globalThis, 'navigator', {
       value: undefined,
       configurable: true,
+      writable: true,
     })
 
     try {
@@ -134,20 +137,29 @@ describe('copyTextToClipboard', () => {
         code: 'clipboard_unavailable',
       })
     } finally {
-      Object.defineProperty(globalThis.navigator, 'clipboard', {
-        value: originalClipboard,
-        configurable: true,
-      })
+      Object.defineProperty(
+        globalThis,
+        'navigator',
+        navigatorDescriptor ?? {
+          value: originalNavigator,
+          configurable: true,
+          writable: true,
+        },
+      )
     }
   })
 
   it('throws a write-failed error when writeText rejects', async () => {
-    const originalClipboard = globalThis.navigator.clipboard
+    const originalNavigator = globalThis.navigator
+    const navigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
     const writeText = vi.fn().mockRejectedValue(new Error('write blocked'))
 
-    Object.defineProperty(globalThis.navigator, 'clipboard', {
-      value: { writeText },
+    Object.defineProperty(globalThis, 'navigator', {
+      value: {
+        clipboard: { writeText },
+      },
       configurable: true,
+      writable: true,
     })
 
     try {
@@ -157,10 +169,15 @@ describe('copyTextToClipboard', () => {
       })
       expect(writeText).toHaveBeenCalledWith('value')
     } finally {
-      Object.defineProperty(globalThis.navigator, 'clipboard', {
-        value: originalClipboard,
-        configurable: true,
-      })
+      Object.defineProperty(
+        globalThis,
+        'navigator',
+        navigatorDescriptor ?? {
+          value: originalNavigator,
+          configurable: true,
+          writable: true,
+        },
+      )
     }
   })
 })

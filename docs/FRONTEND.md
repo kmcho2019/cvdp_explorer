@@ -155,20 +155,20 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - search input is debounced to reduce unnecessary list churn while typing
 - sidebar record list is virtualized for large datasets to maintain responsiveness
 
-## 8. Copy and Paste Interactions
+## 8. Copy and Problem Export Interactions
 
-Record detail now includes copy actions for every prompt, each displayed file, and the full problem payload.
+Record detail now includes copy actions for prompts, displayed files, and a collapsible problem-export panel.
 
 - Prompt copy
-  - System and User prompt blocks expose dedicated `Copy` buttons in their headers.
-  - Prompt copies use raw source text so it can be reused exactly as-is.
+  - System and User prompt blocks expose `Copy` buttons in their headers.
+  - Prompt copies keep raw source markdown unchanged for exact reuse.
 - File copy
-  - The selected file viewer title row includes a compact copy icon button at the top-right.
+  - The selected file viewer title row includes a compact, text `Copy` button at the top-right.
   - File copy writes the raw file text to clipboard for quick reuse.
-- Problem copy / paste
-  - The new `Problem Copy / Paste` panel provides two modes:
-    - `Copy Problem`: shows a markdown-formatted bundle preview and a `Copy all problem context` action.
-    - `Paste Problem`: shows an editable textarea for local text review/editing before comparison or reuse.
+- Problem export (collapsible panel)
+  - The `Problem Copy` panel starts collapsed and shows only one action: `Copy all problem context`.
+  - Expanding the panel reveals a markdown-formatted bundle preview and keeps the same copy action available.
+  - Paste mode was removed to keep this path copy-focused.
 
 ## 9. Problem Bundle Format
 
@@ -189,9 +189,9 @@ File payloads are emitted in markdown code fences inside the bundle for readabil
 
 ## 10. Clipboard Behavior and Errors
 
-- Copy paths call `copyTextToClipboard` and surface inline feedback for each action.
-- Successful copies show short success text.
-- Clipboard failures (unavailable API or write errors) surface clear error text in the copy panel, with the underlying error message included for troubleshooting.
+- `copyTextToClipboard` drives both UI copy actions and full-problem export copy actions.
+- Successful copies show a short toast-style popup (`System/User prompt copied...`, `File ... copied...`, `Problem context copied...`).
+- Clipboard failures (unavailable API or write errors) surface clear toast feedback with the underlying error message.
 
 ## 11. Testing Coverage
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
 import type { Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -70,7 +70,6 @@ type TaskTypeFilter = 'all' | 'code_generation' | 'code_comprehension'
 type MainPanelSection = 'records' | 'benchmark' | 'attribution'
 type PromptViewMode = 'rendered' | 'raw'
 type MarkdownRenderSurface = 'prompt' | 'file'
-type ProblemCopyMode = 'copy' | 'paste'
 
 type CopyNotice = {
   kind: 'success' | 'error'
@@ -620,8 +619,9 @@ function App(): JSX.Element {
   const [recordLoading, setRecordLoading] = useState(false)
   const [recordError, setRecordError] = useState<string | null>(null)
   const [copyNotice, setCopyNotice] = useState<CopyNotice | null>(null)
-  const [problemCopyMode, setProblemCopyMode] = useState<ProblemCopyMode>('copy')
-  const [problemPasteValue, setProblemPasteValue] = useState('')
+  const [problemCopyExpanded, setProblemCopyExpanded] = useState(false)
+
+  const copyNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [indexReloadToken, setIndexReloadToken] = useState(0)
   const [recordReloadToken, setRecordReloadToken] = useState(0)
@@ -632,18 +632,48 @@ function App(): JSX.Element {
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
 
+  const clearCopyNotice = (): void => {
+    if (copyNoticeTimerRef.current !== null) {
+      clearTimeout(copyNoticeTimerRef.current)
+      copyNoticeTimerRef.current = null
+    }
+  }
+
   const handleCopyText = async (text: string, label: string): Promise<void> => {
     try {
       await copyTextToClipboard(text)
+      clearCopyNotice()
       setCopyNotice({
         kind: 'success',
         message: `${label} copied to clipboard.`,
       })
+
+      copyNoticeTimerRef.current = setTimeout(() => {
+        setCopyNotice(null)
+        copyNoticeTimerRef.current = null
+      }, 1800)
     } catch (error: unknown) {
+      clearCopyNotice()
       setCopyNotice({
         kind: 'error',
         message: `Unable to copy ${label}: ${error instanceof Error ? error.message : 'Unknown copy failure.'}`,
       })
+
+      copyNoticeTimerRef.current = setTimeout(() => {
+        setCopyNotice(null)
+        copyNoticeTimerRef.current = null
+      }, 1800)
+    }
+  }
+
+  const toggleProblemCopyPanel = (): void => {
+    setProblemCopyExpanded((value) => !value)
+  }
+
+  const dismissProblemCopyToggleOnKey = (event: KeyboardEvent<HTMLDivElement>): void => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      toggleProblemCopyPanel()
     }
   }
 
@@ -923,8 +953,14 @@ function App(): JSX.Element {
 
   useEffect(() => {
     setCopyNotice(null)
-    setProblemPasteValue('')
+    setProblemCopyExpanded(false)
   }, [selectedRecord])
+
+  useEffect(() => {
+    return () => {
+      clearCopyNotice()
+    }
+  }, [])
 
   const retryIndex = (): void => {
     setIndexReloadToken((value) => value + 1)
@@ -1247,6 +1283,12 @@ function App(): JSX.Element {
           </button>
         </section>
 
+        {copyNotice !== null ? (
+          <div className={`copy-toast copy-toast--${copyNotice.kind}`} role="status" aria-live={copyNotice.kind === 'error' ? 'assertive' : 'polite'}>
+            {copyNotice.message}
+          </div>
+        ) : null}
+
         {mainSection === 'benchmark' ? (
           <BenchmarkGuidePanel />
         ) : mainSection === 'attribution' ? (
@@ -1416,13 +1458,13 @@ function App(): JSX.Element {
                           <div className="file-title">{selectedFile.path}</div>
                           <button
                             type="button"
-                            className="copy-button copy-button--icon copy-button--top-right"
+                            className="copy-button copy-button--top-right"
                             aria-label={`Copy file ${selectedFile.path}`}
                             onClick={() => {
                               void handleCopyText(buildFileCopyText(selectedFile), `File ${selectedFile.path}`)
                             }}
                           >
-                            {'\u2398'}
+                            Copy
                           </button>
                         </div>
                         {selectedFile.redacted ? <div className="redaction">Expected output is redacted in this dataset release.</div> : null}
@@ -1435,64 +1477,40 @@ function App(): JSX.Element {
                 </section>
 
                 <section className="card problem-copy-panel">
-                  <div className="problem-copy-header">
-                    <h3>Problem Copy / Paste</h3>
-                    <div className="prompt-view-switch" role="group" aria-label="Problem copy mode">
-                      <button
-                        type="button"
-                        className={problemCopyMode === 'copy' ? 'prompt-view-button active' : 'prompt-view-button'}
-                        aria-pressed={problemCopyMode === 'copy'}
-                        onClick={() => setProblemCopyMode('copy')}
-                      >
-                        Copy Problem
-                      </button>
-                      <button
-                        type="button"
-                        className={problemCopyMode === 'paste' ? 'prompt-view-button active' : 'prompt-view-button'}
-                        aria-pressed={problemCopyMode === 'paste'}
-                        onClick={() => setProblemCopyMode('paste')}
-                      >
-                        Paste Problem
-                      </button>
-                    </div>
+                  <div
+                    className="problem-copy-header"
+                    role="button"
+                    aria-expanded={problemCopyExpanded}
+                    aria-controls="problem-copy-payload"
+                    tabIndex={0}
+                    onClick={toggleProblemCopyPanel}
+                    onKeyDown={dismissProblemCopyToggleOnKey}
+                  >
+                    <h3>Problem Copy</h3>
+                    <span className="problem-copy-disclosure" aria-hidden>
+                      {problemCopyExpanded ? 'Hide details' : 'Show details'}
+                    </span>
                   </div>
 
-                  {problemCopyMode === 'copy' ? (
-                    <>
-                      {copyNotice !== null ? (
-                        <p className={`copy-feedback copy-feedback--${copyNotice.kind}`}>{copyNotice.message}</p>
-                      ) : null}
+                  <button
+                    type="button"
+                    className="copy-button copy-button--wide"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      void handleCopyText(problemBundleText, 'Problem context')
+                    }}
+                  >
+                    Copy all problem context
+                  </button>
+
+                  {problemCopyExpanded ? (
+                    <div id="problem-copy-payload">
                       <p className="prompt-view-note">Copy as markdown-ready sections including metadata and all problem artifacts.</p>
                       <pre className="problem-copy-preview">
                         <code>{problemBundleText}</code>
                       </pre>
-                      <button
-                        type="button"
-                        className="copy-button copy-button--wide"
-                        onClick={() => {
-                          void handleCopyText(problemBundleText, 'Problem context')
-                        }}
-                      >
-                        Copy all problem context
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {copyNotice !== null ? (
-                        <p className={`copy-feedback copy-feedback--${copyNotice.kind}`}>{copyNotice.message}</p>
-                      ) : null}
-                      <label htmlFor="problem-paste-input" className="prompt-view-note">
-                        Paste text to review or compare against the current problem:
-                      </label>
-                      <textarea
-                        id="problem-paste-input"
-                        className="problem-paste-textarea"
-                        value={problemPasteValue}
-                        onChange={(event) => setProblemPasteValue(event.currentTarget.value)}
-                        placeholder="Paste copied problem context here..."
-                      />
-                    </>
-                  )}
+                    </div>
+                  ) : null}
                 </section>
 
                 <section className="card">

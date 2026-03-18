@@ -957,7 +957,8 @@ describe('App', () => {
     render(<App />)
 
     await screen.findByText('demo case')
-    expect(screen.getByRole('heading', { level: 3, name: 'Problem Copy / Paste' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /problem copy/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Copy all problem context' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Copy all problem context' }))
 
     await waitFor(() => {
@@ -976,7 +977,7 @@ describe('App', () => {
     })
   })
 
-  it('supports paste mode by accepting clipboard-like text input', async () => {
+  it('shows only copy action when problem-copy panel is collapsed', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
       if (url.includes('data/index.json')) {
@@ -993,11 +994,36 @@ describe('App', () => {
     render(<App />)
 
     await screen.findByText('demo case')
-    fireEvent.click(screen.getByRole('button', { name: 'Paste Problem' }))
+    expect(screen.getByRole('button', { name: 'Copy all problem context' })).toBeInTheDocument()
+    expect(screen.queryByText('Copy as markdown-ready sections including metadata and all problem artifacts.')).not.toBeInTheDocument()
+    expect(screen.queryByText('## Problem Export')).not.toBeInTheDocument()
+  })
 
-    const textarea = screen.getByRole('textbox', { name: 'Paste text to review or compare against the current problem:' })
-    fireEvent.change(textarea, { target: { value: 'pasted text review' } })
-    expect((textarea as HTMLTextAreaElement).value).toBe('pasted text review')
+  it('expands problem-copy details to show markdown preview', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(makeRecordPayload()) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByText('demo case')
+    const panelToggle = screen.getByRole('button', { name: /problem copy/i })
+    fireEvent.click(panelToggle)
+
+    await waitFor(() => {
+      expect(screen.getByText('Copy as markdown-ready sections including metadata and all problem artifacts.')).toBeInTheDocument()
+      expect(screen.getByText(/Problem Export/)).toBeInTheDocument()
+      expect(screen.getByText(/## Metadata/)).toBeInTheDocument()
+    })
   })
 
   it('shows copy feedback when clipboard API is unavailable', async () => {

@@ -62,14 +62,14 @@ function appendBlankLine(lines: string[]): void {
 }
 
 export async function copyTextToClipboard(text: string): Promise<void> {
-  if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+  if (typeof globalThis.navigator === 'undefined' || !globalThis.navigator.clipboard || typeof globalThis.navigator.clipboard.writeText !== 'function') {
     const error = new Error('Clipboard API is unavailable in this environment.')
     ;(error as Error & { code: CopyTextError }).code = 'clipboard_unavailable'
     throw error
   }
 
   try {
-    await navigator.clipboard.writeText(text)
+    await globalThis.navigator.clipboard.writeText(text)
   } catch (error) {
     const copiedError = error instanceof Error ? error : new Error('Clipboard write failed')
     ;(copiedError as Error & { code: CopyTextError }).code = 'clipboard_write_failed'
