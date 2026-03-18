@@ -7,6 +7,7 @@ import { filterIndexRecords, isMarkdownLikeFile, mapPrismLanguage, type IndexIte
 import { useDebouncedValue } from './lib/useDebouncedValue'
 import { getBadgeClassName, type BadgeKind } from './lib/badges'
 import { highlightPromptCode, isInlineCodeNode, isMermaidCodeFence } from './lib/promptMarkdown'
+import { buildFileCopyText, buildPromptCopyText, buildProblemBundleText, copyTextToClipboard } from './lib/problemCopy'
 import { formatCategoryLabel } from './lib/categories'
 import { buildFilterHierarchy } from './lib/hierarchy'
 import {
@@ -69,6 +70,12 @@ type TaskTypeFilter = 'all' | 'code_generation' | 'code_comprehension'
 type MainPanelSection = 'records' | 'benchmark' | 'attribution'
 type PromptViewMode = 'rendered' | 'raw'
 type MarkdownRenderSurface = 'prompt' | 'file'
+type ProblemCopyMode = 'copy' | 'paste'
+
+type CopyNotice = {
+  kind: 'success' | 'error'
+  message: string
+}
 
 type UrlState = {
   id: string
@@ -612,6 +619,9 @@ function App(): JSX.Element {
   const [indexError, setIndexError] = useState<string | null>(null)
   const [recordLoading, setRecordLoading] = useState(false)
   const [recordError, setRecordError] = useState<string | null>(null)
+  const [copyNotice, setCopyNotice] = useState<CopyNotice | null>(null)
+  const [problemCopyMode, setProblemCopyMode] = useState<ProblemCopyMode>('copy')
+  const [problemPasteValue, setProblemPasteValue] = useState('')
 
   const [indexReloadToken, setIndexReloadToken] = useState(0)
   const [recordReloadToken, setRecordReloadToken] = useState(0)
@@ -621,6 +631,21 @@ function App(): JSX.Element {
   const [listHeight, setListHeight] = useState(420)
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
+
+  const handleCopyText = async (text: string, label: string): Promise<void> => {
+    try {
+      await copyTextToClipboard(text)
+      setCopyNotice({
+        kind: 'success',
+        message: `${label} copied to clipboard.`,
+      })
+    } catch (error: unknown) {
+      setCopyNotice({
+        kind: 'error',
+        message: `Unable to copy ${label}: ${error instanceof Error ? error.message : 'Unknown copy failure.'}`,
+      })
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController()
@@ -888,6 +913,18 @@ function App(): JSX.Element {
     }
     return selectedRecord.expected_outputs.target_files.find((f) => f.path === selection.path) ?? null
   }, [selectedRecord, selection])
+
+  const problemBundleText = useMemo(() => {
+    if (!selectedRecord) {
+      return ''
+    }
+    return buildProblemBundleText(selectedRecord)
+  }, [selectedRecord])
+
+  useEffect(() => {
+    setCopyNotice(null)
+    setProblemPasteValue('')
+  }, [selectedRecord])
 
   const retryIndex = (): void => {
     setIndexReloadToken((value) => value + 1)
@@ -1296,12 +1333,36 @@ function App(): JSX.Element {
                   ) : null}
                   {selectedRecord.prompt.system.trim() !== '' ? (
                     <div className="prompt-block">
-                      <h4>System Message</h4>
+                      <div className="copyable-header">
+                        <h4>System Message</h4>
+                        <button
+                          type="button"
+                          className="copy-button"
+                          aria-label="Copy system prompt"
+                          onClick={() => {
+                            void handleCopyText(buildPromptCopyText({ kind: 'system', content: selectedRecord.prompt.system }), 'System prompt')
+                          }}
+                        >
+                          Copy
+                        </button>
+                      </div>
                       <PromptContent content={selectedRecord.prompt.system} mode={promptViewMode} />
                     </div>
                   ) : null}
                   <div className="prompt-block">
-                    <h4>User Prompt</h4>
+                    <div className="copyable-header">
+                      <h4>User Prompt</h4>
+                      <button
+                        type="button"
+                        className="copy-button"
+                        aria-label="Copy user prompt"
+                        onClick={() => {
+                          void handleCopyText(buildPromptCopyText({ kind: 'user', content: selectedRecord.prompt.user }), 'User prompt')
+                        }}
+                      >
+                        Copy
+                      </button>
+                    </div>
                     <PromptContent content={selectedRecord.prompt.user} mode={promptViewMode} />
                   </div>
                 </section>
@@ -1351,7 +1412,19 @@ function App(): JSX.Element {
                   <div className="file-viewer">
                     {selectedFile ? (
                       <>
-                        <div className="file-title">{selectedFile.path}</div>
+                        <div className="file-viewer-title-row">
+                          <div className="file-title">{selectedFile.path}</div>
+                          <button
+                            type="button"
+                            className="copy-button copy-button--icon copy-button--top-right"
+                            aria-label={`Copy file ${selectedFile.path}`}
+                            onClick={() => {
+                              void handleCopyText(buildFileCopyText(selectedFile), `File ${selectedFile.path}`)
+                            }}
+                          >
+                            {'\u2398'}
+                          </button>
+                        </div>
                         {selectedFile.redacted ? <div className="redaction">Expected output is redacted in this dataset release.</div> : null}
                         <FileViewerContent file={selectedFile} />
                       </>
@@ -1359,6 +1432,67 @@ function App(): JSX.Element {
                       <p>Select a file to view content.</p>
                     )}
                   </div>
+                </section>
+
+                <section className="card problem-copy-panel">
+                  <div className="problem-copy-header">
+                    <h3>Problem Copy / Paste</h3>
+                    <div className="prompt-view-switch" role="group" aria-label="Problem copy mode">
+                      <button
+                        type="button"
+                        className={problemCopyMode === 'copy' ? 'prompt-view-button active' : 'prompt-view-button'}
+                        aria-pressed={problemCopyMode === 'copy'}
+                        onClick={() => setProblemCopyMode('copy')}
+                      >
+                        Copy Problem
+                      </button>
+                      <button
+                        type="button"
+                        className={problemCopyMode === 'paste' ? 'prompt-view-button active' : 'prompt-view-button'}
+                        aria-pressed={problemCopyMode === 'paste'}
+                        onClick={() => setProblemCopyMode('paste')}
+                      >
+                        Paste Problem
+                      </button>
+                    </div>
+                  </div>
+
+                  {problemCopyMode === 'copy' ? (
+                    <>
+                      {copyNotice !== null ? (
+                        <p className={`copy-feedback copy-feedback--${copyNotice.kind}`}>{copyNotice.message}</p>
+                      ) : null}
+                      <p className="prompt-view-note">Copy as markdown-ready sections including metadata and all problem artifacts.</p>
+                      <pre className="problem-copy-preview">
+                        <code>{problemBundleText}</code>
+                      </pre>
+                      <button
+                        type="button"
+                        className="copy-button copy-button--wide"
+                        onClick={() => {
+                          void handleCopyText(problemBundleText, 'Problem context')
+                        }}
+                      >
+                        Copy all problem context
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {copyNotice !== null ? (
+                        <p className={`copy-feedback copy-feedback--${copyNotice.kind}`}>{copyNotice.message}</p>
+                      ) : null}
+                      <label htmlFor="problem-paste-input" className="prompt-view-note">
+                        Paste text to review or compare against the current problem:
+                      </label>
+                      <textarea
+                        id="problem-paste-input"
+                        className="problem-paste-textarea"
+                        value={problemPasteValue}
+                        onChange={(event) => setProblemPasteValue(event.currentTarget.value)}
+                        placeholder="Paste copied problem context here..."
+                      />
+                    </>
+                  )}
                 </section>
 
                 <section className="card">

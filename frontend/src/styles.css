@@ -735,6 +735,69 @@ body {
   font-size: 0.8rem;
 }
 
+.copyable-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.copy-button {
+  border: 1px solid #94a3b8;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.72rem;
+  line-height: 1;
+  padding: 0.25rem 0.55rem;
+  cursor: pointer;
+}
+
+.copy-button:hover {
+  background: #eef2ff;
+}
+
+.copy-button--icon {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+
+.copy-button--wide {
+  width: 100%;
+  border-radius: 8px;
+}
+
+.copy-button--top-right {
+  position: absolute;
+  right: 0.45rem;
+  top: 0.05rem;
+}
+
+.copy-feedback {
+  margin: 0.3rem 0;
+  padding: 0.55rem;
+  border-radius: 8px;
+  border: 1px solid;
+  font-size: 0.8rem;
+}
+
+.copy-feedback--success {
+  border-color: #34d399;
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.copy-feedback--error {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
 .prompt-inline-code {
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.85em;
@@ -828,8 +891,14 @@ body {
 .file-title {
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.8rem;
-  margin-bottom: 0.5rem;
+  margin: 0.2rem 0 0.5rem;
   color: #334155;
+}
+
+.file-viewer-title-row {
+  position: relative;
+  padding-top: 0.35rem;
+  margin-bottom: 0.5rem;
 }
 
 .markdown-file-view {
@@ -880,6 +949,53 @@ body {
   overflow: auto;
   max-height: 560px;
   border: 1px solid #111827;
+}
+
+.problem-copy-panel .prompt-view-switch {
+  flex-wrap: nowrap;
+}
+
+.problem-copy-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.problem-copy-preview {
+  margin: 0.3rem 0 0.8rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 0.7rem;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.problem-copy-preview code {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.73rem;
+  white-space: pre-wrap;
+}
+
+.problem-paste-textarea {
+  width: 100%;
+  min-height: 220px;
+  max-height: 360px;
+  resize: vertical;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.74rem;
+  padding: 0.65rem;
+}
+
+.problem-paste-textarea:focus {
+  outline: 2px solid #93c5fd;
+  outline-offset: 1px;
 }
 
 .redaction {

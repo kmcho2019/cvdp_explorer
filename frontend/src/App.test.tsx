@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import App from './App'
+import * as problemCopy from './lib/problemCopy'
 
 type MockResponse = {
   ok: boolean
@@ -835,6 +836,223 @@ describe('App', () => {
     fireEvent.change(screen.getByLabelText('Search records'), { target: { value: '' } })
     await waitFor(() => {
       expect(window.location.search).not.toContain('q=')
+    })
+  })
+
+  it('copies system prompt markdown when system prompt copy is clicked', async () => {
+    const copySpy = vi.spyOn(problemCopy, 'copyTextToClipboard').mockResolvedValue(undefined)
+    const systemPrompt = 'System prompt body\nwith markdown'
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(makeRecordPayload({ prompt: { system: systemPrompt, user: 'User prompt body' } })) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByText('demo case')
+    fireEvent.click(screen.getByRole('button', { name: 'Copy system prompt' }))
+
+    await waitFor(() => {
+      expect(copySpy).toHaveBeenCalledWith(systemPrompt)
+      expect(screen.getByText('System prompt copied to clipboard.')).toBeInTheDocument()
+    })
+  })
+
+  it('copies user prompt markdown when user prompt copy is clicked', async () => {
+    const copySpy = vi.spyOn(problemCopy, 'copyTextToClipboard').mockResolvedValue(undefined)
+    const userPrompt = 'User prompt body\nwith markdown block'
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(makeRecordPayload({ prompt: { system: 'System prompt', user: userPrompt } })) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByText('demo case')
+    fireEvent.click(screen.getByRole('button', { name: 'Copy user prompt' }))
+
+    await waitFor(() => {
+      expect(copySpy).toHaveBeenCalledWith(userPrompt)
+      expect(screen.getByText('User prompt copied to clipboard.')).toBeInTheDocument()
+    })
+  })
+
+  it('copies currently selected file source text', async () => {
+    const copySpy = vi.spyOn(problemCopy, 'copyTextToClipboard').mockResolvedValue(undefined)
+    const selectedFileText = 'module selected_file;\nendmodule'
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(
+          makeRecordPayload({
+            context_files: [{ path: 'rtl/demo.sv', language: 'systemverilog', content: selectedFileText }],
+          }),
+        ) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByText('demo case')
+    fireEvent.click(screen.getByRole('button', { name: 'Copy file rtl/demo.sv' }))
+
+    await waitFor(() => {
+      expect(copySpy).toHaveBeenCalledWith(selectedFileText)
+      expect(screen.getByText('File rtl/demo.sv copied to clipboard.')).toBeInTheDocument()
+    })
+  })
+
+  it('copies full-problem bundle and includes required sections', async () => {
+    const copySpy = vi.spyOn(problemCopy, 'copyTextToClipboard').mockResolvedValue(undefined)
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(
+          makeRecordPayload({
+            context_files: [{ path: 'context/a.txt', language: 'text', content: 'CTX' }],
+            harness_files: [{ path: 'harness/run.py', language: 'python', content: 'print(1)' }],
+            expected_outputs: {
+              target_files: [{ path: 'expected/out.sv', language: 'systemverilog', content: 'module out; endmodule' }],
+              response_text: 'Expected response text',
+              response_redacted: false,
+            },
+            prompt: { system: 'System message body', user: 'User message body' },
+          }),
+        ) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByText('demo case')
+    expect(screen.getByRole('heading', { level: 3, name: 'Problem Copy / Paste' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Copy all problem context' }))
+
+    await waitFor(() => {
+      const copiedText = (copySpy.mock.calls[0] ?? [''])[0]
+      expect(copiedText).toContain('## Problem Export')
+      expect(copiedText).toContain('## Metadata')
+      expect(copiedText).toContain('## Input')
+      expect(copiedText).toContain('## Evaluation Environment')
+      expect(copiedText).toContain('## Expected Output')
+      expect(copiedText).toContain('### System Prompt')
+      expect(copiedText).toContain('### User Prompt')
+      expect(copiedText).toContain('### File: context/a.txt')
+      expect(copiedText).toContain('### File: harness/run.py')
+      expect(copiedText).toContain('### File: expected/out.sv')
+      expect(copiedText).toContain('Expected response text')
+    })
+  })
+
+  it('supports paste mode by accepting clipboard-like text input', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(makeRecordPayload()) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByText('demo case')
+    fireEvent.click(screen.getByRole('button', { name: 'Paste Problem' }))
+
+    const textarea = screen.getByRole('textbox', { name: 'Paste text to review or compare against the current problem:' })
+    fireEvent.change(textarea, { target: { value: 'pasted text review' } })
+    expect((textarea as HTMLTextAreaElement).value).toBe('pasted text review')
+  })
+
+  it('shows copy feedback when clipboard API is unavailable', async () => {
+    const copySpy = vi
+      .spyOn(problemCopy, 'copyTextToClipboard')
+      .mockRejectedValue(new Error('Clipboard API is unavailable in this environment.'))
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(makeRecordPayload()) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByText('demo case')
+    fireEvent.click(screen.getByRole('button', { name: 'Copy user prompt' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Unable to copy User prompt: Clipboard API is unavailable in this environment.')).toBeInTheDocument()
+    })
+    expect(copySpy).toHaveBeenCalled()
+  })
+
+  it('shows copy feedback when clipboard write fails', async () => {
+    const copySpy = vi.spyOn(problemCopy, 'copyTextToClipboard').mockRejectedValue(new Error('write blocked'))
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(makeRecordPayload()) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByText('demo case')
+    fireEvent.click(screen.getByRole('button', { name: 'Copy user prompt' }))
+
+    await waitFor(() => {
+      expect(copySpy).toHaveBeenCalledTimes(1)
+      expect(screen.getByText('Unable to copy User prompt: write blocked')).toBeInTheDocument()
     })
   })
 })

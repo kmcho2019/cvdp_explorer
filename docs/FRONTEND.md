@@ -25,6 +25,8 @@ The frontend is a static React application for browsing normalized CVDP records 
   - primary explorer UI, loading flow, URL sync, and render logic
 - `frontend/src/lib/explorer.ts`
   - filter and Prism-language helper utilities
+- `frontend/src/lib/problemCopy.ts`
+  - copy helpers and markdown bundle builder for prompt/file/problem clipboard export
 - `frontend/src/lib/badges.ts`
   - semantic badge tone and class mapping for metadata tags
 - `frontend/src/lib/categories.ts`
@@ -38,6 +40,8 @@ The frontend is a static React application for browsing normalized CVDP records 
   - layout, visual design, and state styling (including responsive benchmark diagram rendering)
 - `frontend/src/App.test.tsx`
   - App-level UI behavior tests
+- `frontend/src/lib/problemCopy.test.ts`
+  - prompt/file/copy-payload utility tests
 - `frontend/src/lib/explorer.test.ts`
   - utility-level tests
 - `frontend/src/lib/badges.test.ts`
@@ -151,7 +155,45 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - search input is debounced to reduce unnecessary list churn while typing
 - sidebar record list is virtualized for large datasets to maintain responsiveness
 
-## 8. Testing Coverage
+## 8. Copy and Paste Interactions
+
+Record detail now includes copy actions for every prompt, each displayed file, and the full problem payload.
+
+- Prompt copy
+  - System and User prompt blocks expose dedicated `Copy` buttons in their headers.
+  - Prompt copies use raw source text so it can be reused exactly as-is.
+- File copy
+  - The selected file viewer title row includes a compact copy icon button at the top-right.
+  - File copy writes the raw file text to clipboard for quick reuse.
+- Problem copy / paste
+  - The new `Problem Copy / Paste` panel provides two modes:
+    - `Copy Problem`: shows a markdown-formatted bundle preview and a `Copy all problem context` action.
+    - `Paste Problem`: shows an editable textarea for local text review/editing before comparison or reuse.
+
+## 9. Problem Bundle Format
+
+The copy helper `buildProblemBundleText(record)` builds a markdown bundle with:
+
+- `## Problem Export` top-level section
+- `## Metadata` with record id, title, dataset, mode, task type, difficulty, category, commercial flag, and source file
+- `## Input` with:
+  - `### System Prompt`
+  - `### User Prompt`
+  - `### Context Files` containing each source path and content
+- `## Evaluation Environment` with `### Harness Files`
+- `## Expected Output` with:
+  - `### Reference Response` using response text or a redacted note
+  - `### Target Files` listing expected artifact contents
+
+File payloads are emitted in markdown code fences inside the bundle for readability while preserving source text.
+
+## 10. Clipboard Behavior and Errors
+
+- Copy paths call `copyTextToClipboard` and surface inline feedback for each action.
+- Successful copies show short success text.
+- Clipboard failures (unavailable API or write errors) surface clear error text in the copy panel, with the underlying error message included for troubleshooting.
+
+## 11. Testing Coverage
 
 `frontend/src/lib/explorer.test.ts` covers:
 
@@ -217,6 +259,9 @@ This keeps the viewer responsive on very large files while still allowing deeper
 - prompt raw-mode toggle behavior (rendered/raw) with markdown/highlighting disable guarantees in raw mode
 - markdown context-file rendering in file viewer (heading/list/code-fence/Mermaid behavior)
 - category label rendering with short descriptions in filter/metadata views
+- prompt copy and file copy actions in the UI
+- full problem bundle copy/paste panel interactions, including copy-all payload verification
+- clipboard failure-path coverage for unavailable/unwriteable clipboard scenarios
 
 Run:
 
@@ -225,7 +270,7 @@ cd frontend
 npm test
 ```
 
-## 9. Local Development Commands
+## 12. Local Development Commands
 
 Start dev server:
 

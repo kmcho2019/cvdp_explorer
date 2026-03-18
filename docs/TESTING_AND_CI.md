@@ -82,6 +82,12 @@ Frontend tests currently validate:
 - category filtering with selected-record synchronization
 - sidebar virtualization behavior for large record sets
 - URL-state hydration and URL-query synchronization behavior
+- full problem copy/paste UI interactions:
+  - system and user prompt copy actions
+  - selected-file copy action
+  - full problem bundle copy action and payload coverage
+  - paste mode text editing state
+  - copy failure feedback for unavailable clipboard/write errors
 
 ## 4. CI Workflows
 
