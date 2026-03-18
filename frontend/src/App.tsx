@@ -11,6 +11,18 @@ import { buildFileCopyText, buildPromptCopyText, buildProblemBundleText, copyTex
 import { formatCategoryLabel } from './lib/categories'
 import { buildFilterHierarchy } from './lib/hierarchy'
 import {
+  PROJECT_AUTHOR_NAME,
+  PROJECT_AUTHOR_URL,
+  PROJECT_REPOSITORY_URL,
+  SITE_CANONICAL_BASE_URL,
+  SITE_DESCRIPTION,
+  SITE_LOCALE,
+  SITE_NAME,
+  SITE_PUBLISHER_NAME,
+  SITE_PUBLISHER_URL,
+  SITE_VERSION,
+} from './attribution'
+import {
   availabilityLabel,
   BENCHMARK_INTERACTION_CASES,
   BENCHMARK_REFERENCE_PIN,
@@ -86,13 +98,12 @@ type UrlState = {
   categoryFilter: string
 }
 
+type JsonLdNode = Record<string, unknown>
+
 const LARGE_FILE_HIGHLIGHT_THRESHOLD = 120_000
 const SIDEBAR_ROW_HEIGHT = 118
 const SIDEBAR_OVERSCAN = 8
 const SEARCH_DEBOUNCE_MS = 120
-const PROJECT_REPOSITORY_URL = 'https://github.com/kmcho2019/cvdp_explorer'
-const PROJECT_AUTHOR_NAME = 'Kyumin Cho'
-const PROJECT_AUTHOR_URL = 'https://github.com/kmcho2019'
 let mermaidInitialized = false
 let mermaidDiagramSequence = 0
 
@@ -197,6 +208,129 @@ function buildRecordUrl(recordId: string): string {
     ...readUrlState(),
     id: recordId,
   })
+}
+
+function buildRecordCanonicalUrl(recordId: string): string {
+  const url = new URL(window.location.href)
+  url.search = ''
+  url.searchParams.set('id', recordId)
+  return url.toString()
+}
+
+function upsertMetaTagContent(attributeName: 'name' | 'property', attributeValue: string, content: string): void {
+  const selector = `meta[${attributeName}="${attributeValue}"]`
+  let tag = document.head.querySelector<HTMLMetaElement>(selector)
+  if (tag === null) {
+    tag = document.createElement('meta')
+    tag.setAttribute(attributeName, attributeValue)
+    document.head.appendChild(tag)
+  }
+  tag.setAttribute('content', content)
+}
+
+function setCanonicalUrl(canonicalUrl: string): void {
+  let canonicalTag = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+  if (canonicalTag === null) {
+    canonicalTag = document.createElement('link')
+    canonicalTag.setAttribute('rel', 'canonical')
+    document.head.appendChild(canonicalTag)
+  }
+  canonicalTag.setAttribute('href', canonicalUrl)
+}
+
+function setRecordJsonLd(record: RecordDetail | null): void {
+  const target = document.getElementById('record-jsonld')
+  if (target === null) {
+    return
+  }
+
+  if (record === null) {
+    target.textContent = ''
+    return
+  }
+
+  const canonicalUrl = buildRecordCanonicalUrl(record.meta.id)
+  const contextFilePaths = record.context_files.map((file) => file.path)
+  const harnessFilePaths = record.harness_files.map((file) => file.path)
+  const targetFilePaths = record.expected_outputs.target_files.map((file) => file.path)
+
+  const payload: JsonLdNode = {
+    '@context': 'https://schema.org',
+    '@type': 'Dataset',
+    '@id': canonicalUrl,
+    name: record.meta.title,
+    description: `Benchmark problem record ${record.meta.id} for the NVIDIA CVDP benchmark dataset.`,
+    inLanguage: SITE_LOCALE.split('_')[0],
+    version: SITE_VERSION,
+    url: canonicalUrl,
+    identifier: record.meta.id,
+    keywords: [
+      'NVIDIA CVDP',
+      record.meta.task_type,
+      record.meta.mode,
+      record.meta.dataset,
+      record.meta.category,
+      record.meta.difficulty,
+    ].filter(Boolean),
+    author: {
+      '@type': 'Person',
+      name: PROJECT_AUTHOR_NAME,
+      url: PROJECT_AUTHOR_URL,
+    },
+    creator: {
+      '@type': 'Person',
+      name: PROJECT_AUTHOR_NAME,
+      url: PROJECT_AUTHOR_URL,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_PUBLISHER_NAME,
+      url: SITE_PUBLISHER_URL,
+    },
+    copyrightHolder: {
+      '@type': 'Person',
+      name: PROJECT_AUTHOR_NAME,
+      url: PROJECT_AUTHOR_URL,
+    },
+    isPartOf: {
+      '@type': 'SoftwareApplication',
+      name: SITE_NAME,
+      url: SITE_CANONICAL_BASE_URL,
+    },
+    hasPart: [
+      {
+        '@type': 'CreativeWork',
+        name: 'System prompt',
+        description: record.prompt.system === '' ? 'No system prompt provided for this record.' : 'System prompt text.',
+      },
+      {
+        '@type': 'CreativeWork',
+        name: 'User prompt',
+        description: record.prompt.user === '' ? 'No user prompt provided for this record.' : 'User prompt text.',
+      },
+      {
+        '@type': 'CreativeWork',
+        name: 'Context files',
+        numberOfItems: record.context_files.length,
+        filePaths: contextFilePaths,
+      },
+      {
+        '@type': 'CreativeWork',
+        name: 'Harness files',
+        numberOfItems: record.harness_files.length,
+        filePaths: harnessFilePaths,
+      },
+      {
+        '@type': 'CreativeWork',
+        name: 'Expected target files',
+        numberOfItems: record.expected_outputs.target_files.length,
+        filePaths: targetFilePaths,
+      },
+    ],
+  }
+
+  target.type = 'application/ld+json'
+  target.textContent = JSON.stringify(payload, null, 2)
 }
 
 function CodeBlock({ file }: { file: FileEntry }): JSX.Element {
@@ -949,6 +1083,23 @@ function App(): JSX.Element {
       return ''
     }
     return buildProblemBundleText(selectedRecord)
+  }, [selectedRecord])
+
+  useEffect(() => {
+    const title = selectedRecord === null ? SITE_NAME : `${selectedRecord.meta.title} | ${SITE_NAME}`
+    document.title = title
+
+    const canonicalUrl = selectedRecord === null
+      ? `${window.location.origin}${window.location.pathname}`
+      : buildRecordCanonicalUrl(selectedRecord.meta.id)
+
+    setCanonicalUrl(canonicalUrl)
+    upsertMetaTagContent('property', 'og:title', title)
+    upsertMetaTagContent('property', 'og:url', canonicalUrl)
+    upsertMetaTagContent('name', 'twitter:title', title)
+    upsertMetaTagContent('name', 'twitter:url', canonicalUrl)
+    upsertMetaTagContent('name', 'twitter:description', selectedRecord ? `Problem ${selectedRecord.meta.id}: ${selectedRecord.meta.title}` : SITE_DESCRIPTION)
+    setRecordJsonLd(selectedRecord)
   }, [selectedRecord])
 
   useEffect(() => {

@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import '@testing-library/jest-dom/vitest'
 import App from './App'
 import * as problemCopy from './lib/problemCopy'
+import { SITE_NAME } from './attribution'
 
 type MockResponse = {
   ok: boolean
@@ -1023,6 +1024,79 @@ describe('App', () => {
       expect(screen.getByText('Copy as markdown-ready sections including metadata and all problem artifacts.')).toBeInTheDocument()
       expect(screen.getByText(/Problem Export/)).toBeInTheDocument()
       expect(screen.getByText(/## Metadata/)).toBeInTheDocument()
+    })
+  })
+
+  it('updates document metadata for selected record', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(makeRecordPayload()) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByText('demo case')
+
+    const canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null
+    expect(document.title).toBe(`demo case | ${SITE_NAME}`)
+    expect(canonical).not.toBeNull()
+    if (!canonical) {
+      return
+    }
+    expect(canonical).toHaveAttribute('href', 'http://localhost/?id=cvdp_agentic_demo_case_0001')
+
+    const ogUrl = document.querySelector('meta[property="og:url"]')
+    expect(ogUrl).toHaveAttribute('content', 'http://localhost/?id=cvdp_agentic_demo_case_0001')
+
+    const twitterUrl = document.querySelector('meta[name="twitter:url"]')
+    expect(twitterUrl).toHaveAttribute('content', 'http://localhost/?id=cvdp_agentic_demo_case_0001')
+  })
+
+  it('injects record JSON-LD in head metadata', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('data/index.json')) {
+        return mockOkJson([makeIndexItem()]) as unknown as Response
+      }
+      if (url.includes('data/records/cvdp_agentic_demo_case_0001.json')) {
+        return mockOkJson(
+          makeRecordPayload({
+            prompt: { system: 'System prompt body', user: 'User prompt body' },
+            context_files: [{ path: 'context/a.txt', language: 'text', content: 'context' }],
+          }),
+        ) as unknown as Response
+      }
+      return { ok: false, status: 404, json: async () => ({}) } as unknown as Response
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    await screen.findByText('demo case')
+
+    await waitFor(() => {
+      const script = document.getElementById('record-jsonld')
+      expect(script).toBeTruthy()
+      const payload = JSON.parse(script?.textContent ?? '{}') as {
+        '@type'?: string
+        name?: string
+        identifier?: string
+        url?: string
+      }
+
+      expect(payload['@type']).toBe('Dataset')
+      expect(payload.name).toBe('demo case')
+      expect(payload.identifier).toBe('cvdp_agentic_demo_case_0001')
+      expect(payload.url).toBe('http://localhost/?id=cvdp_agentic_demo_case_0001')
     })
   })
 

@@ -90,6 +90,10 @@ Frontend tests currently validate:
   - copy-toasting feedback and error states for copy and failure paths
   - clipboard helper coverage for unavailable/rejected clipboard APIs using navigator-guarded test setup
   - copy failure feedback for unavailable clipboard/write errors
+- SEO and crawlability checks:
+  - runtime metadata updates for record title/canonical and record JSON-LD
+  - generated sitemap structure and presence of record URL entries
+  - head metadata checks for canonical, Open Graph, Twitter, and JSON-LD script presence in frontend build artifacts
 
 ## 4. CI Workflows
 

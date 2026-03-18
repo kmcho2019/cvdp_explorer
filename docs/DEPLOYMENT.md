@@ -169,6 +169,13 @@ Post-build SEO smoke checks:
 test -f frontend/dist/robots.txt
 test -f frontend/dist/sitemap.xml
 test -f frontend/dist/googlea2df242e632476d2.html
+grep -q '<link rel="canonical"' frontend/dist/index.html
+grep -q 'application/ld+json' frontend/dist/index.html
+grep -q 'name="twitter:site"' frontend/dist/index.html
+grep -q 'property="og:image"' frontend/dist/index.html
+grep -q 'twitter:image' frontend/dist/index.html
+grep -q 'id="record-jsonld"' frontend/dist/index.html
+grep -q 'name="twitter:url"' frontend/dist/index.html
 ```
 
 ## 5. Basic SEO baseline for GitHub Pages
@@ -177,7 +184,8 @@ Current baseline in this repository:
 
 - `frontend/index.html` includes description, canonical URL, robots directive, Open Graph, Twitter, and WebSite JSON-LD metadata.
 - `frontend/public/robots.txt` allows crawling and points to sitemap.
-- `frontend/public/sitemap.xml` declares the public explorer URL.
+- `frontend/public/sitemap.xml` is generated from `public/data/index.json` and declares the public explorer URL plus record deep links.
+- runtime metadata updates for selected records are injected into `frontend/dist/index.html` via the `record-jsonld` block.
 
 Recommended Search Console actions:
 

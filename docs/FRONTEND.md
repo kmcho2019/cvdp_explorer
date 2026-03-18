@@ -260,7 +260,7 @@ File payloads are emitted in markdown code fences inside the bundle for readabil
 - markdown context-file rendering in file viewer (heading/list/code-fence/Mermaid behavior)
 - category label rendering with short descriptions in filter/metadata views
 - prompt copy and file copy actions in the UI
-- full problem bundle copy/paste panel interactions, including copy-all payload verification
+- full problem bundle copy panel interactions, including copy-all payload verification
 - clipboard failure-path coverage for unavailable/unwriteable clipboard scenarios
 
 Run:
@@ -286,3 +286,52 @@ Build for production:
 cd frontend
 npm run build
 ```
+
+## 13. SEO and Attribution Metadata
+
+- `frontend/index.html` provides indexable base metadata:
+  - Open Graph (`og:*`) tags including canonical, title/description, locale, and social preview image.
+  - Twitter card metadata including `twitter:card`, `twitter:site`, and `twitter:creator`.
+  - base JSON-LD (`site-jsonld`) with explicit author/creator/publisher and language/version fields.
+  - a runtime record placeholder JSON-LD (`record-jsonld`) that the app populates when a record is selected.
+- Metadata source of truth:
+  - `frontend/src/attribution.ts` is now used for repo URL, author profile, canonical root, and social/publisher constants in both UI and head metadata.
+- Runtime record metadata updates:
+  - when a record is loaded, document title changes to `<record title> | CVDP Benchmark Explorer`
+  - canonical link becomes `.../?id=<record-id>`
+  - OG/Twitter title/url are aligned with the active record
+  - record JSON-LD is updated with discoverable details (record id/title/task mode/category/difficulty/dataset and file presence counts)
+- Crawlability artifacts:
+  - sitemap.xml is generated from `public/data/index.json` during build via `npm run generate:sitemap`
+  - sitemap includes root URL and record URLs in `/?id=<id>` form (or all records when index size is bounded by workflow env)
+- Attribution panel uses the same metadata constants for visible repository links:
+  - Repository
+  - Author name/profile URL
+
+## 14. Manual SEO Accessibility Checks
+
+After build, we run these quick checks to confirm crawler-friendly delivery:
+
+```bash
+cd frontend
+npm run build
+
+grep -q '<link rel="canonical"' dist/index.html
+grep -q 'application/ld+json' dist/index.html
+grep -q 'id="record-jsonld"' dist/index.html
+grep -q 'og:image' dist/index.html
+grep -q 'twitter:url' dist/index.html
+grep -q 'twitter:site' dist/index.html
+grep -q 'twitter:creator' dist/index.html
+grep -q 'twitter:image' dist/index.html
+```
+
+Then run:
+
+```bash
+curl -I https://<site>/robots.txt
+curl -I https://<site>/sitemap.xml
+curl -L https://<site>/?id=<record-id> | Select-String -Pattern "canonical|application/ld\\+json|og:url|twitter:url"
+```
+
+Also verify a sample deep link still renders without JS for baseline readability (for example by disabling JS in browser devtools and checking that the shell record list and static metadata remain visible).

@@ -52,6 +52,16 @@ jobs:
 
       - name: Verify Pages artifact layout
         run: |
+          OWNER="${GITHUB_REPOSITORY%%/*}"
+          REPO="${GITHUB_REPOSITORY#*/}"
+          if [ "${REPO}" = "${OWNER}.github.io" ]; then
+            SITE_ORIGIN="https://${OWNER}.github.io"
+            EXPECTED_ASSET_PREFIX="/assets/"
+          else
+            SITE_ORIGIN="https://${OWNER}.github.io/${REPO}"
+            EXPECTED_ASSET_PREFIX="/${REPO}/assets/"
+          fi
+
           test -f frontend/dist/index.html
           test -f frontend/dist/data/index.json
           test -f frontend/dist/robots.txt
@@ -63,18 +73,69 @@ jobs:
             done
           fi
 
-          OWNER="${GITHUB_REPOSITORY%%/*}"
-          REPO="${GITHUB_REPOSITORY#*/}"
-          if [ "${REPO}" = "${OWNER}.github.io" ]; then
-            EXPECTED_ASSET_PREFIX="/assets/"
-          else
-            EXPECTED_ASSET_PREFIX="/${REPO}/assets/"
-          fi
-
           if ! grep -q "${EXPECTED_ASSET_PREFIX}" frontend/dist/index.html; then
             echo "Expected asset prefix '${EXPECTED_ASSET_PREFIX}' not found in dist/index.html"
             sed -n '1,40p' frontend/dist/index.html
             exit 1
+          fi
+
+          if ! grep -q '<link rel="canonical"' frontend/dist/index.html; then
+            echo 'Canonical link tag missing from index.html'
+            exit 1
+          fi
+
+          if ! grep -q 'name="twitter:site"' frontend/dist/index.html; then
+            echo 'twitter:site missing from index.html'
+            exit 1
+          fi
+
+          if ! grep -q 'name="twitter:creator"' frontend/dist/index.html; then
+            echo 'twitter:creator missing from index.html'
+            exit 1
+          fi
+
+          if ! grep -q 'name="twitter:url"' frontend/dist/index.html; then
+            echo 'twitter:url missing from index.html'
+            exit 1
+          fi
+
+          if ! grep -q 'property="og:image"' frontend/dist/index.html; then
+            echo 'og:image missing from index.html'
+            exit 1
+          fi
+
+          if ! grep -q 'twitter:image' frontend/dist/index.html; then
+            echo 'twitter:image missing from index.html'
+            exit 1
+          fi
+
+          if ! grep -q 'application/ld+json' frontend/dist/index.html; then
+            echo 'JSON-LD script block missing from index.html'
+            exit 1
+          fi
+
+          if ! grep -q 'id="site-jsonld"' frontend/dist/index.html; then
+            echo 'site JSON-LD script block missing from index.html'
+            exit 1
+          fi
+
+          if ! grep -q 'id="record-jsonld"' frontend/dist/index.html; then
+            echo 'record JSON-LD script placeholder missing from index.html'
+            exit 1
+          fi
+
+          if ! grep -q "${SITE_ORIGIN}" frontend/dist/sitemap.xml; then
+            echo 'Sitemap does not include canonical site root'
+            exit 1
+          fi
+
+          RECORD_COUNT=$(node -e "const fs = require('fs'); const path = 'frontend/dist/data/index.json'; const data = JSON.parse(fs.readFileSync(path, 'utf8')); process.stdout.write(String(data.length));")
+          if [ "${RECORD_COUNT}" -gt 0 ]; then
+            FIRST_RECORD_ID=$(node -e "const fs = require('fs'); const path = 'frontend/dist/data/index.json'; const data = JSON.parse(fs.readFileSync(path, 'utf8')); process.stdout.write(data[0]?.id || '');")
+            if [ -n "${FIRST_RECORD_ID}" ] && ! grep -Fq "?id=${FIRST_RECORD_ID}" frontend/dist/sitemap.xml; then
+              echo "Sitemap missing record deep-link for id: ${FIRST_RECORD_ID}"
+              exit 1
+            fi
           fi
 
       - name: Configure GitHub Pages
